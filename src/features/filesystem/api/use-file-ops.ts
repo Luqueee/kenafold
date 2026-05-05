@@ -96,6 +96,14 @@ export function useFileOps(
     open: (path: string) =>
       fsGateway.open(path).catch((e) => logger.error("open failed", e)),
 
+    reveal: (path: string) =>
+      fsGateway.reveal(path).catch((e) => setOpError(fsErrorMessage(e))),
+
+    duplicate: (path: string) =>
+      wrap(async () => {
+        await fsGateway.duplicate(path)
+      }),
+
     compress: (paths: string[], destDir: string, archiveName?: string) =>
       wrap(async () => {
         await fsGateway.compress(paths, destDir, archiveName ?? null)

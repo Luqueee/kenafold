@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
 
 export type InlineMode = null | "rename" | "newFolder" | "newFile"
@@ -14,12 +14,17 @@ export function useInlineEditing(path: string, entries: FileEntry[], ops: Ops) {
   const [inlineTarget, setInlineTarget] = useState<string | null>(null)
   const [inlineValue, setInlineValue] = useState("")
   const [pendingSelect, setPendingSelect] = useState<string | null>(null)
-  const clearPendingSelect = () => setPendingSelect(null)
+  const clearPendingSelect = useCallback(() => setPendingSelect(null), [])
 
+  // Reset inline editing state when navigating to a different directory.
+  // setState-in-effect is the simplest expression here — clears are conditional
+  // on a prop transition, not derivable at render-time without a ref antipattern.
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setInlineMode(null)
     setInlineTarget(null)
     setInlineValue("")
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [path])
 
   function startRename(entry: FileEntry) {
@@ -55,6 +60,9 @@ export function useInlineEditing(path: string, entries: FileEntry[], ops: Ops) {
         cancelInline()
         return
       }
+      // Stash the new name so the explorer can re-select the renamed file
+      // once the directory listing comes back with the new entry.
+      setPendingSelect(trimmed)
       await ops.rename(inlineTarget, trimmed)
     } else if (inlineMode === "newFolder") {
       setPendingSelect(trimmed)

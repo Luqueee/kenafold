@@ -37,8 +37,11 @@ export function AddSmbDialog({ open, onOpenChange, initial, onSave }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Reset form when sheet opens or editing target changes. setState-in-effect
+  // here is the simplest expression — derived state would need a ref antipattern.
   useEffect(() => {
     if (!open) return
+    /* eslint-disable react-hooks/set-state-in-effect */
     setName(initial?.name ?? "")
     setHost(initial?.host ?? "")
     setShare(initial?.share ?? "")
@@ -47,6 +50,7 @@ export function AddSmbDialog({ open, onOpenChange, initial, onSave }: Props) {
     setPassword("")
     setAutoMount(initial?.auto_mount ?? true)
     setError(null)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [open, initial])
 
   const isEdit = Boolean(initial)

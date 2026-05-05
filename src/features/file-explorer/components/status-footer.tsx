@@ -1,5 +1,7 @@
+import { useMemo } from "react"
 import { useFileExplorer } from "../state/explorer-context"
 import { useMemoryUsage } from "../hooks/use-memory-usage"
+import { formatSize } from "@/shared/lib/format"
 
 const MB = 1024 * 1024
 const GB = 1024 * MB
@@ -20,11 +22,22 @@ export function StatusFooter() {
     filterQuery,
     clipboard,
     selectedPaths,
+    entries,
     hasMore,
     loadMore,
     total,
   } = useFileExplorer()
   const memory = useMemoryUsage()
+
+  // Sum file sizes of selected items (dirs are 0, sin recursión).
+  const selectedSize = useMemo(() => {
+    if (selectedPaths.size < 2) return 0
+    let sum = 0
+    for (const e of entries) {
+      if (!e.is_dir && selectedPaths.has(e.path)) sum += e.size
+    }
+    return sum
+  }, [selectedPaths, entries])
 
   return (
     <footer className="flex h-7 w-full shrink-0 items-center justify-between border-t border-border/60 bg-muted/20 px-4 text-[11px] text-muted-foreground">
@@ -54,6 +67,7 @@ export function StatusFooter() {
             {selectedPaths.size > 1 && (
               <span className="ml-3 text-primary">
                 {selectedPaths.size} seleccionados
+                {selectedSize > 0 && ` · ${formatSize(selectedSize)}`}
               </span>
             )}
           </>

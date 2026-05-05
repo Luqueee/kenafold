@@ -95,6 +95,34 @@ fn build_smb_url(share: &SmbShare, password: &str) -> String {
     )
 }
 
+/// Strip user:password from any smb:// URL that osascript may echo back.
+/// `smb://user:secret@host/share` → `smb://host/share`.
+fn redact_smb(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let bytes = input.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i..].starts_with(b"smb://") {
+            out.push_str("smb://");
+            i += 6;
+            // Find the next '@' before whitespace/quote/end; if found, skip credentials.
+            let rest = &input[i..];
+            let end = rest
+                .find(|c: char| c.is_whitespace() || c == '"' || c == '\'')
+                .unwrap_or(rest.len());
+            if let Some(at) = rest[..end].find('@') {
+                i += at + 1;
+            }
+        } else {
+            // Push one char and advance; safe for UTF-8.
+            let ch = input[i..].chars().next().unwrap();
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+    }
+    out
+}
+
 pub fn run_mount(share: &SmbShare) -> Result<String, String> {
     let password = get_password(&share.id)
         .map_err(|e| format!("No hay contraseña en keychain ({})", e))?;
@@ -106,9 +134,36 @@ pub fn run_mount(share: &SmbShare) -> Result<String, String> {
         .map_err(|e| e.to_string())?;
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr);
-        return Err(err.trim().to_string());
+        return Err(redact_smb(err.trim()));
     }
     Ok(mount_point_for(share).to_string_lossy().into_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn redact_strips_credentials() {
+        let input = "mount failed: smb://alice:hunter2@host.local/share permission denied";
+        let out = redact_smb(input);
+        assert!(!out.contains("alice"));
+        assert!(!out.contains("hunter2"));
+        assert!(out.contains("smb://host.local/share"));
+    }
+
+    #[test]
+    fn redact_preserves_text_without_smb() {
+        let input = "generic error message";
+        assert_eq!(redact_smb(input), input);
+    }
+
+    #[test]
+    fn redact_handles_url_at_end() {
+        let input = "url: smb://u:p@host/s";
+        let out = redact_smb(input);
+        assert_eq!(out, "url: smb://host/s");
+    }
 }
 
 #[tauri::command]
@@ -194,7 +249,9 @@ pub fn smb_unmount(state: tauri::State<SmbState>, id: String) -> Result<(), Stri
         .output()
         .map_err(|e| e.to_string())?;
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+        return Err(redact_smb(
+            String::from_utf8_lossy(&output.stderr).trim(),
+        ));
     }
     Ok(())
 }

@@ -1,16 +1,22 @@
+import { useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import {
   FolderOpen,
   Copy,
+  CopyPlus,
   Scissors,
   Clipboard,
+  ClipboardCopy,
+  ExternalLink,
   FilePlus,
   FolderPlus,
   Pencil,
+  Play,
   Trash2,
   Archive,
 } from "lucide-react"
 import { useFileExplorer } from "../state/explorer-context"
+import { isShellScript } from "@/features/filesystem/domain/file-entry"
 
 interface MenuItemProps {
   icon?: React.ReactNode
@@ -71,9 +77,77 @@ export function FileContextMenu() {
     selectedPaths,
     entries,
     compress,
+    duplicate,
+    reveal,
+    copyPathToClipboard,
+    runInTerminal,
   } = useFileExplorer()
 
-  if (!contextMenu) return null
+  return contextMenu ? (
+    <ContextMenuBody
+      contextMenu={contextMenu}
+      closeContextMenu={closeContextMenu}
+      clipboard={clipboard}
+      handleActivate={handleActivate}
+      copy={copy}
+      cut={cut}
+      handlePaste={handlePaste}
+      startRename={startRename}
+      setDeleteTargets={setDeleteTargets}
+      startNewFolder={startNewFolder}
+      startNewFile={startNewFile}
+      selectedPaths={selectedPaths}
+      entries={entries}
+      compress={compress}
+      duplicate={duplicate}
+      reveal={reveal}
+      copyPathToClipboard={copyPathToClipboard}
+      runInTerminal={runInTerminal}
+    />
+  ) : null
+}
+
+interface BodyProps {
+  contextMenu: NonNullable<ReturnType<typeof useFileExplorer>["contextMenu"]>
+  closeContextMenu: () => void
+  clipboard: ReturnType<typeof useFileExplorer>["clipboard"]
+  handleActivate: ReturnType<typeof useFileExplorer>["handleActivate"]
+  copy: ReturnType<typeof useFileExplorer>["copy"]
+  cut: ReturnType<typeof useFileExplorer>["cut"]
+  handlePaste: ReturnType<typeof useFileExplorer>["handlePaste"]
+  startRename: ReturnType<typeof useFileExplorer>["startRename"]
+  setDeleteTargets: ReturnType<typeof useFileExplorer>["setDeleteTargets"]
+  startNewFolder: ReturnType<typeof useFileExplorer>["startNewFolder"]
+  startNewFile: ReturnType<typeof useFileExplorer>["startNewFile"]
+  selectedPaths: ReturnType<typeof useFileExplorer>["selectedPaths"]
+  entries: ReturnType<typeof useFileExplorer>["entries"]
+  compress: ReturnType<typeof useFileExplorer>["compress"]
+  duplicate: ReturnType<typeof useFileExplorer>["duplicate"]
+  reveal: ReturnType<typeof useFileExplorer>["reveal"]
+  copyPathToClipboard: ReturnType<typeof useFileExplorer>["copyPathToClipboard"]
+  runInTerminal: ReturnType<typeof useFileExplorer>["runInTerminal"]
+}
+
+function ContextMenuBody({
+  contextMenu,
+  closeContextMenu,
+  clipboard,
+  handleActivate,
+  copy,
+  cut,
+  handlePaste,
+  startRename,
+  setDeleteTargets,
+  startNewFolder,
+  startNewFile,
+  selectedPaths,
+  entries,
+  compress,
+  duplicate,
+  reveal,
+  copyPathToClipboard,
+  runInTerminal,
+}: BodyProps) {
   const entry = contextMenu.entry
   const targetPaths =
     entry && selectedPaths.has(entry.path) && selectedPaths.size > 1
@@ -82,6 +156,27 @@ export function FileContextMenu() {
         ? [entry.path]
         : []
   const targetEntries = entries.filter((e) => targetPaths.includes(e.path))
+
+  // Measure the menu after first render and reposition if it overflows the viewport.
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const [pos, setPos] = useState({ x: contextMenu.x, y: contextMenu.y })
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const margin = 8
+    let x = contextMenu.x
+    let y = contextMenu.y
+    if (x + rect.width > window.innerWidth - margin) {
+      x = Math.max(margin, window.innerWidth - rect.width - margin)
+    }
+    if (y + rect.height > window.innerHeight - margin) {
+      y = Math.max(margin, window.innerHeight - rect.height - margin)
+    }
+    if (x !== pos.x || y !== pos.y) setPos({ x, y })
+    // pos intentionally omitted — guarded by the equality check above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextMenu.x, contextMenu.y])
 
   return createPortal(
     <>
@@ -94,10 +189,11 @@ export function FileContextMenu() {
         }}
       />
       <div
+        ref={menuRef}
         role="menu"
         aria-label="Acciones de archivo"
         className="fixed z-50 min-w-50 overflow-hidden rounded-lg border border-border/80 bg-popover py-1 shadow-xl"
-        style={{ left: contextMenu.x, top: contextMenu.y }}
+        style={{ left: pos.x, top: pos.y }}
       >
         {entry ? (
           <>
@@ -107,6 +203,26 @@ export function FileContextMenu() {
               shortcut="↵"
               onClick={() => {
                 handleActivate(entry)
+                closeContextMenu()
+              }}
+            />
+            {isShellScript(entry) && (
+              <MenuItem
+                icon={<Play className="h-3.5 w-3.5" />}
+                label="Ejecutar en terminal"
+                shortcut="⌘⇧E"
+                onClick={() => {
+                  runInTerminal(entry.path)
+                  closeContextMenu()
+                }}
+              />
+            )}
+            <MenuItem
+              icon={<ExternalLink className="h-3.5 w-3.5" />}
+              label="Mostrar en Finder"
+              shortcut="⌘⇧R"
+              onClick={() => {
+                reveal(entry.path)
                 closeContextMenu()
               }}
             />
@@ -126,6 +242,34 @@ export function FileContextMenu() {
               shortcut="⌘X"
               onClick={() => {
                 cut(targetPaths)
+                closeContextMenu()
+              }}
+            />
+            <MenuItem
+              icon={<Clipboard className="h-3.5 w-3.5" />}
+              label="Pegar"
+              shortcut="⌘V"
+              disabled={!clipboard}
+              onClick={() => {
+                handlePaste()
+                closeContextMenu()
+              }}
+            />
+            <MenuItem
+              icon={<CopyPlus className="h-3.5 w-3.5" />}
+              label="Duplicar"
+              shortcut="⌘D"
+              onClick={() => {
+                for (const p of targetPaths) duplicate(p)
+                closeContextMenu()
+              }}
+            />
+            <MenuItem
+              icon={<ClipboardCopy className="h-3.5 w-3.5" />}
+              label="Copiar ruta"
+              shortcut="⌘⇧C"
+              onClick={() => {
+                copyPathToClipboard(entry.path)
                 closeContextMenu()
               }}
             />

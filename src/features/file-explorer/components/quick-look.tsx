@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect } from "react"
 import { createPortal } from "react-dom"
-import { FileQuestion, Loader2, X } from "lucide-react"
-import { convertFileSrc } from "@tauri-apps/api/core"
-import { fsGateway, type Preview } from "@/features/filesystem/infra/fs.gateway"
-import { fsErrorMessage } from "@/features/filesystem/domain/fs-error"
+import { X } from "lucide-react"
 import { formatSize } from "@/shared/lib/format"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
+import { PreviewBody } from "./preview-body"
 
 interface Props {
   entry: FileEntry | null
@@ -13,35 +11,6 @@ interface Props {
 }
 
 export function QuickLook({ entry, onClose }: Props) {
-  const [preview, setPreview] = useState<Preview | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!entry || entry.is_dir) {
-      setPreview(null)
-      setError(null)
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    fsGateway
-      .preview(entry.path)
-      .then((p) => {
-        if (!cancelled) setPreview(p)
-      })
-      .catch((e) => {
-        if (!cancelled) setError(fsErrorMessage(e))
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [entry])
-
   useEffect(() => {
     if (!entry) return
     const onKey = (e: KeyboardEvent) => {
@@ -82,15 +51,7 @@ export function QuickLook({ entry, onClose }: Props) {
         </header>
 
         <div className="flex flex-1 items-center justify-center overflow-auto p-4">
-          {loading && (
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          )}
-          {error && !loading && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-          {!loading && !error && preview && (
-            <PreviewBody preview={preview} path={entry.path} />
-          )}
+          <PreviewBody entry={entry} />
         </div>
 
         <footer className="border-t border-border/60 px-4 py-1.5 text-[11px] text-muted-foreground">
@@ -100,53 +61,4 @@ export function QuickLook({ entry, onClose }: Props) {
     </div>,
     document.body
   )
-}
-
-function PreviewBody({ preview, path }: { preview: Preview; path: string }) {
-  const assetSrc = useMemo(() => convertFileSrc(path), [path])
-  switch (preview.kind) {
-    case "image":
-      return (
-        <img
-          src={assetSrc}
-          alt=""
-          className="max-h-[70vh] max-w-full object-contain"
-        />
-      )
-    case "audio":
-      return <audio controls src={assetSrc} className="w-full max-w-md" />
-    case "video":
-      return (
-        <video controls src={assetSrc} className="max-h-[70vh] max-w-full" />
-      )
-    case "pdf":
-      return (
-        <iframe
-          src={`${assetSrc}#toolbar=1&view=FitH`}
-          className="h-[80vh] w-full"
-          title="PDF"
-        />
-      )
-    case "text":
-      return (
-        <pre className="max-h-[70vh] w-full overflow-auto rounded bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap">
-          {preview.content}
-          {preview.truncated && (
-            <span className="mt-3 block text-muted-foreground italic">
-              … (contenido truncado)
-            </span>
-          )}
-        </pre>
-      )
-    case "unsupported":
-      return (
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <FileQuestion className="h-10 w-10" />
-          <p className="text-sm">
-            Sin previsualización
-            {preview.ext ? ` para .${preview.ext}` : ""}
-          </p>
-        </div>
-      )
-  }
 }

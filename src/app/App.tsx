@@ -4,7 +4,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/features/sidebar/components/app-sidebar"
 import { Toolbar } from "@/features/file-explorer/components/toolbar"
 import { FilterBar } from "@/features/file-explorer/components/filter-bar"
-import { FileTable } from "@/features/file-explorer/components/file-table"
+import { ExplorerBody } from "@/features/file-explorer/components/explorer-body"
 import { DeleteBar } from "@/features/file-explorer/components/delete-bar"
 import { ErrorBar } from "@/features/file-explorer/components/error-bar"
 import { StatusFooter } from "@/features/file-explorer/components/status-footer"
@@ -13,11 +13,13 @@ import { QuickLookHost } from "@/features/file-explorer/components/quick-look-ho
 import { FileExplorerProvider } from "@/features/file-explorer/state/explorer-context"
 import { SearchPalette } from "@/features/search/components/search-palette"
 import { SettingsPanel } from "@/features/settings/components/settings-panel"
+import { Toaster } from "@/components/ui/sonner"
 import { useSettings } from "@/features/settings/api/use-settings"
 import { useHomeDir } from "@/features/filesystem/api/use-directory"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import { useHistory } from "@/features/navigation/api/use-history"
 import { useFavorites } from "@/features/navigation/api/use-favorites"
+import { readLastPath, writeLastPath } from "@/features/file-explorer/hooks/use-explorer-prefs"
 import { logger } from "@/shared/lib/logger"
 
 const sidebarStyle = {
@@ -27,11 +29,18 @@ const sidebarStyle = {
 
 export default function App() {
   const homeDir = useHomeDir()
-  const { current: currentPath, navigate, back, forward } = useHistory(homeDir)
+  // Restore the last visited directory from previous session, fall back to home.
+  const initialPath = homeDir ? readLastPath() ?? homeDir : null
+  const { current: currentPath, navigate, back, forward, canBack, canForward } = useHistory(initialPath)
   const { favorites, add, remove, isFavorite } = useFavorites()
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settings = useSettings()
+
+  // Persist the current directory so the next launch lands here.
+  useEffect(() => {
+    if (currentPath) writeLastPath(currentPath)
+  }, [currentPath])
 
   const handleOpenFile = useCallback((p: string) => {
     fsGateway.open(p).catch((e) => logger.error("open failed", e))
@@ -58,6 +67,10 @@ export default function App() {
         <FileExplorerProvider
           path={currentPath}
           onNavigate={navigate}
+          onBack={back}
+          onForward={forward}
+          canBack={canBack}
+          canForward={canForward}
           onOpenSearch={() => setSearchOpen(true)}
           onAddFavorite={add}
           isFavorite={isFavorite(currentPath)}
@@ -81,7 +94,7 @@ export default function App() {
                 onRemoveFavorite={remove}
               />
               <SidebarInset className="min-w-0 flex-1 overflow-hidden">
-                <FileTable />
+                <ExplorerBody />
               </SidebarInset>
             </div>
             <DeleteBar />
@@ -114,6 +127,8 @@ export default function App() {
         onNavigate={navigate}
         onOpenFile={handleOpenFile}
       />
+
+      <Toaster position="bottom-right" richColors closeButton />
     </>
   )
 }

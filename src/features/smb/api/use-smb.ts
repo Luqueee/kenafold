@@ -30,7 +30,9 @@ export function useSmb() {
   }, [refreshMounted])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     refresh()
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [refresh])
 
   useEffect(() => {

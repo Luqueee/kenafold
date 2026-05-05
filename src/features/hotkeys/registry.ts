@@ -29,6 +29,10 @@ export const HOTKEY_ACTIONS = [
   { id: "file.delete", label: "Eliminar", group: "Archivos", defaultHotkey: "Delete" },
   { id: "file.newFile", label: "Nuevo archivo", group: "Archivos", defaultHotkey: "Mod+N" },
   { id: "file.newFolder", label: "Nueva carpeta", group: "Archivos", defaultHotkey: "Mod+Shift+N" },
+  { id: "file.duplicate", label: "Duplicar", group: "Archivos", defaultHotkey: "Mod+D" },
+  { id: "file.copyPath", label: "Copiar ruta", group: "Archivos", defaultHotkey: "Mod+Shift+C" },
+  { id: "file.reveal", label: "Mostrar en Finder", group: "Archivos", defaultHotkey: "Mod+Shift+R" },
+  { id: "file.runInTerminal", label: "Ejecutar en terminal", group: "Archivos", defaultHotkey: "Mod+Shift+E" },
 
   // Vista
   { id: "view.list", label: "Vista lista", group: "Vista", defaultHotkey: "Mod+1" },

@@ -32,9 +32,12 @@ tar = "0.4"
 zstd = { version = "0.13", features = ["zstdmt"] }
 trash = "5"
 grep = "0.3"
+notify = "8"
+notify-debouncer-mini = "0.7"
 
 [target."cfg(target_os = \"macos\")".dependencies]
-cocoa = "0.26"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSColor", "NSWindow", "NSResponder"] }
 keyring = { version = "3", features = ["apple-native"] }
 
 

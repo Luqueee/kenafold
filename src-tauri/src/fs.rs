@@ -137,12 +137,106 @@ pub fn open_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Reveal an entry in the OS file manager (Finder on macOS, Explorer on Windows,
+/// `xdg-open` on the parent dir on Linux).
+#[tauri::command]
+pub fn reveal_in_file_manager(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    reject_traversal(p)?;
+    if !p.exists() {
+        return Err("La ruta no existe".into());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path))
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // No "select item" verb on Linux — open the parent dir instead.
+        let parent = p.parent().unwrap_or(p);
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// Copy a single entry to the same parent dir with an automatic " copy" /
+/// " copy N" suffix (Finder-style).
+#[tauri::command]
+pub fn duplicate_entry(src: String) -> Result<String, String> {
+    let src_path = Path::new(&src);
+    reject_traversal(src_path)?;
+    if !src_path.exists() {
+        return Err("La ruta no existe".into());
+    }
+    let parent = src_path.parent().ok_or("Sin directorio padre")?;
+    let file_name = src_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or("Nombre inválido")?;
+
+    let (stem, ext) = match file_name.rfind('.') {
+        Some(i) if i > 0 && !src_path.is_dir() => (&file_name[..i], &file_name[i..]),
+        _ => (file_name, ""),
+    };
+
+    let mut candidate = parent.join(format!("{} copy{}", stem, ext));
+    let mut n = 2;
+    while candidate.exists() && n < 1000 {
+        candidate = parent.join(format!("{} copy {}{}", stem, n, ext));
+        n += 1;
+    }
+    if candidate.exists() {
+        return Err("No se encontró un nombre disponible".into());
+    }
+    ensure_within(parent, &candidate)?;
+
+    if src_path.is_dir() {
+        copy_dir_recursive(src_path, &candidate).map_err(|e| e.to_string())?;
+    } else {
+        std::fs::copy(src_path, &candidate).map_err(|e| e.to_string())?;
+    }
+    Ok(candidate.to_string_lossy().into_owned())
+}
+
 fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dst)?;
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
         let dst_path = dst.join(entry.file_name());
-        if entry.file_type()?.is_dir() {
+        // file_type() does NOT follow symlinks; check is_symlink first so we never
+        // descend into a target outside the src tree (or duplicate its contents).
+        let ft = entry.file_type()?;
+        if ft.is_symlink() {
+            #[cfg(unix)]
+            {
+                let target = std::fs::read_link(entry.path())?;
+                let _ = std::fs::remove_file(&dst_path);
+                std::os::unix::fs::symlink(target, &dst_path)?;
+            }
+            #[cfg(not(unix))]
+            {
+                // On non-unix platforms, skip symlinks rather than risk following them.
+                continue;
+            }
+        } else if ft.is_dir() {
             copy_dir_recursive(&entry.path(), &dst_path)?;
         } else {
             std::fs::copy(entry.path(), dst_path)?;

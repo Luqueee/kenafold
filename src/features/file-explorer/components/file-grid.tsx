@@ -3,6 +3,7 @@ import { useFileExplorer } from "../state/explorer-context"
 import { FileIcon } from "./file-icon"
 import { FileTile } from "./file-tile"
 import { InlineEditInput } from "./inline-edit-input"
+import { formatSize } from "@/shared/lib/format"
 
 export function FileGrid() {
   const {
@@ -88,9 +89,16 @@ export function FileGrid() {
                 autoSelect
               />
             ) : (
-              <span className="line-clamp-2 w-full break-all text-center text-xs">
-                {entry.name}
-              </span>
+              <>
+                <span className="line-clamp-2 w-full break-all text-center text-xs">
+                  {entry.name}
+                </span>
+                {!entry.is_dir && entry.size > 0 && (
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {formatSize(entry.size)}
+                  </span>
+                )}
+              </>
             )}
           </FileTile>
         )

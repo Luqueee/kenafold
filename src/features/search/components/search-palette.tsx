@@ -49,12 +49,16 @@ export function SearchPalette({
 
   useEffect(() => {
     if (!open) return
+    /* eslint-disable react-hooks/set-state-in-effect */
     setQuery("")
     setSelected(0)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [open])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setSelected(0)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [nameResults, grepResults, mode])
 
   useEffect(() => {

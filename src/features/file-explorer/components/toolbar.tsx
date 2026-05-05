@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react"
 import { useDroppable } from "@dnd-kit/core"
 import { useAction } from "@/features/hotkeys/bindings"
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUp,
+  Eye,
+  EyeOff,
   LayoutGrid,
   List,
   Pencil,
@@ -106,12 +110,18 @@ export function Toolbar() {
     isFavorite,
     draggingEntry,
     onNavigate,
+    onBack,
+    onForward,
+    canBack,
+    canForward,
     reload,
     onAddFavorite,
     onOpenSearch,
     path,
     viewMode,
     setViewMode,
+    showHidden,
+    setShowHidden,
     terminalId,
     onOpenSettings,
   } = useFileExplorer()
@@ -133,7 +143,9 @@ export function Toolbar() {
     setEditingPath(true)
     try {
       await navigator.clipboard.writeText(path)
-    } catch {}
+    } catch {
+      // Clipboard API unavailable (no permission, non-secure context); not critical.
+    }
   }
 
   function commitPathEdit() {
@@ -157,6 +169,26 @@ export function Toolbar() {
       <SidebarTrigger className="h-8 w-8" />
       <Separator orientation="vertical" className="mx-1 h-full" />
 
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={onBack}
+        disabled={!canBack}
+        title="Atrás (⌘[)"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={onForward}
+        disabled={!canForward}
+        title="Adelante (⌘])"
+      >
+        <ArrowRight className="h-4 w-4" />
+      </Button>
       <DroppableUpButton
         parent={parent}
         isDragging={isDragging}
@@ -286,6 +318,19 @@ export function Toolbar() {
         variant="ghost"
         size="icon"
         className="h-8 w-8"
+        onClick={() => setShowHidden(!showHidden)}
+        title={showHidden ? "Ocultar archivos ocultos" : "Mostrar archivos ocultos"}
+      >
+        {showHidden ? (
+          <Eye className="h-4 w-4" />
+        ) : (
+          <EyeOff className="h-4 w-4" />
+        )}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
         onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")}
         title={viewMode === "list" ? "Vista cuadrícula" : "Vista lista"}
       >
@@ -295,6 +340,7 @@ export function Toolbar() {
           <List className="h-4 w-4" />
         )}
       </Button>
+
       <Button
         variant="ghost"
         size="icon"

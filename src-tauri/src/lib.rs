@@ -94,19 +94,18 @@ pub fn run() {
 
             #[cfg(target_os = "macos")]
             {
-                use cocoa::appkit::{NSColor, NSWindow};
-                use cocoa::base::{id, nil};
+                use objc2_app_kit::{NSColor, NSWindow};
 
-                let ns_window = window.ns_window().unwrap() as id;
+                let ns_window_ptr = window.ns_window().unwrap() as *mut NSWindow;
                 unsafe {
-                    let bg_color = NSColor::colorWithRed_green_blue_alpha_(
-                        nil,
+                    let ns_window: &NSWindow = &*ns_window_ptr;
+                    let bg_color = NSColor::colorWithRed_green_blue_alpha(
                         10.0 / 255.0,
                         16.0 / 255.0,
                         14.0 / 255.0,
                         1.0,
                     );
-                    ns_window.setBackgroundColor_(bg_color);
+                    ns_window.setBackgroundColor(Some(&bg_color));
                 }
             }
 
@@ -118,6 +117,8 @@ pub fn run() {
             fs::list_directory,
             fs::get_home_dir,
             fs::open_file,
+            fs::reveal_in_file_manager,
+            fs::duplicate_entry,
             fs::create_dir,
             fs::create_file,
             fs::rename_entry,
@@ -134,6 +135,7 @@ pub fn run() {
             search::clear_search_index,
             terminal::open_terminal,
             terminal::list_terminals,
+            terminal::run_in_terminal,
             system::get_memory_usage,
             smb::smb_list,
             smb::smb_save,

@@ -32,7 +32,9 @@ export function useSettings() {
   }, [])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     refreshTerminals()
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [refreshTerminals])
 
   const setTerminalId = useCallback((id: string | null) => {

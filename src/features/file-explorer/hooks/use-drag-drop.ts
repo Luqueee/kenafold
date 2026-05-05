@@ -15,7 +15,11 @@ interface Ops {
   copy: (src: string, dest: string) => Promise<void>
 }
 
-export function useDragDrop(ops: Ops) {
+export function useDragDrop(
+  ops: Ops,
+  selectedPathsRef: React.RefObject<ReadonlySet<string>>,
+  entriesRef: React.RefObject<readonly FileEntry[]>
+) {
   const [draggingEntry, setDraggingEntry] = useState<FileEntry | null>(null)
   const [copyMode, setCopyMode] = useState(false)
   const isDraggingRef = useRef(false)
@@ -58,23 +62,35 @@ export function useDragDrop(ops: Ops) {
     const src = active.data.current?.entry as FileEntry | undefined
     if (!src) return
 
-    const navPath = over.data.current?.navPath as string | undefined
-    if (navPath) {
-      if (src.path === navPath) return
-      if (navPath.startsWith(src.path + "/")) return
-      const dest = joinPath(navPath, src.name)
-      if (wasCopy) await ops.copy(src.path, dest)
-      else await ops.move(src.path, dest)
-      return
-    }
+    const destDir = (() => {
+      const navPath = over.data.current?.navPath as string | undefined
+      if (navPath) return navPath
+      const destEntry = over.data.current?.entry as FileEntry | undefined
+      if (destEntry?.is_dir) return destEntry.path
+      return null
+    })()
+    if (!destDir) return
 
-    const destEntry = over.data.current?.entry as FileEntry | undefined
-    if (!destEntry || !destEntry.is_dir) return
-    if (src.path === destEntry.path) return
-    if (src.path.startsWith(destEntry.path + "/")) return
-    const dest = joinPath(destEntry.path, src.name)
-    if (wasCopy) await ops.copy(src.path, dest)
-    else await ops.move(src.path, dest)
+    // If the dragged entry is part of the current selection, operate on the
+    // whole selection. Otherwise just move/copy the dragged entry.
+    const selected = selectedPathsRef.current ?? new Set<string>()
+    const draggingMulti = selected.size > 1 && selected.has(src.path)
+    const targets: FileEntry[] = draggingMulti
+      ? (entriesRef.current ?? []).filter((e) => selected.has(e.path))
+      : [src]
+
+    for (const t of targets) {
+      if (t.path === destDir) continue
+      if (destDir.startsWith(t.path + "/")) continue
+      const dest = joinPath(destDir, t.name)
+      if (dest === t.path) continue
+      try {
+        if (wasCopy) await ops.copy(t.path, dest)
+        else await ops.move(t.path, dest)
+      } catch {
+        // ops surface their own errors via opError; keep iterating.
+      }
+    }
   }
 
   function handleDragCancel() {

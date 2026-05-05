@@ -1,6 +1,8 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
+
+use crate::path_safety::reject_traversal;
 
 #[derive(Serialize, Clone)]
 pub struct TerminalInfo {
@@ -9,18 +11,37 @@ pub struct TerminalInfo {
 }
 
 #[cfg(target_os = "macos")]
-fn detect_app(app_name: &str) -> bool {
-    let candidates = [
-        format!("/Applications/{}.app", app_name),
-        format!("/System/Applications/{}.app", app_name),
-        format!("/System/Applications/Utilities/{}.app", app_name),
-        format!(
-            "{}/Applications/{}.app",
-            std::env::var("HOME").unwrap_or_default(),
-            app_name
-        ),
+fn macos_app_dirs() -> Vec<PathBuf> {
+    let mut dirs = vec![
+        PathBuf::from("/Applications"),
+        PathBuf::from("/Applications/Utilities"),
+        PathBuf::from("/System/Applications"),
+        PathBuf::from("/System/Applications/Utilities"),
     ];
-    candidates.iter().any(|p| Path::new(p).exists())
+    if let Ok(home) = std::env::var("HOME") {
+        dirs.push(PathBuf::from(format!("{}/Applications", home)));
+    }
+    dirs
+}
+
+/// Lowercased names of all `.app` bundles found in standard macOS app dirs.
+/// Single scan — much faster than stat'ing each candidate path individually.
+#[cfg(target_os = "macos")]
+fn list_installed_app_names_macos() -> Vec<String> {
+    let mut out = Vec::new();
+    for dir in macos_app_dirs() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else { continue };
+            if let Some(stem) = name.strip_suffix(".app") {
+                out.push(stem.to_lowercase());
+            }
+        }
+    }
+    out
 }
 
 fn detect_bin(bin: &str) -> bool {
@@ -37,36 +58,46 @@ pub fn list_terminals() -> Vec<TerminalInfo> {
 
     #[cfg(target_os = "macos")]
     {
-        let apps = [
-            ("terminal", "Terminal", "Terminal"),
-            ("iterm", "iTerm", "iTerm"),
-            ("warp", "Warp", "Warp"),
-            ("ghostty", "Ghostty", "Ghostty"),
-            ("hyper", "Hyper", "Hyper"),
-            ("tabby", "Tabby", "Tabby"),
-            ("wezterm", "WezTerm", "WezTerm"),
-            ("alacritty", "Alacritty", "Alacritty"),
-            ("kitty", "Kitty", "kitty"),
+        // Known terminal emulators on macOS, with case-insensitive aliases for
+        // the .app bundle name (iTerm ships as either "iTerm.app" or "iTerm2.app",
+        // Wave as "Wave.app" or "Wave Terminal.app", etc.).
+        let known: &[(&str, &[&str], &str)] = &[
+            ("terminal", &["terminal"], "Terminal"),
+            ("iterm", &["iterm", "iterm2"], "iTerm"),
+            ("warp", &["warp"], "Warp"),
+            ("ghostty", &["ghostty"], "Ghostty"),
+            ("hyper", &["hyper"], "Hyper"),
+            ("tabby", &["tabby"], "Tabby"),
+            ("wezterm", &["wezterm"], "WezTerm"),
+            ("alacritty", &["alacritty"], "Alacritty"),
+            ("kitty", &["kitty"], "kitty"),
+            ("wave", &["wave", "wave terminal"], "Wave"),
+            ("blackbox", &["black box", "blackbox"], "Black Box"),
         ];
-        for (id, app, label) in apps {
-            if detect_app(app) {
+
+        let installed = list_installed_app_names_macos();
+        for (id, aliases, label) in known {
+            if aliases.iter().any(|alias| installed.iter().any(|i| i == alias)) {
                 out.push(TerminalInfo {
-                    id: id.to_string(),
-                    name: label.to_string(),
+                    id: (*id).to_string(),
+                    name: (*label).to_string(),
                 });
             }
         }
-        if !out.iter().any(|t| t.id == "alacritty") && detect_bin("alacritty") {
-            out.push(TerminalInfo {
-                id: "alacritty".into(),
-                name: "Alacritty".into(),
-            });
-        }
-        if !out.iter().any(|t| t.id == "kitty") && detect_bin("kitty") {
-            out.push(TerminalInfo {
-                id: "kitty".into(),
-                name: "kitty".into(),
-            });
+
+        // CLI-only fallbacks (Homebrew installs without a .app bundle).
+        for (id, label) in [
+            ("alacritty", "Alacritty"),
+            ("kitty", "kitty"),
+            ("wezterm", "WezTerm"),
+            ("ghostty", "Ghostty"),
+        ] {
+            if !out.iter().any(|t| t.id == id) && detect_bin(id) {
+                out.push(TerminalInfo {
+                    id: id.into(),
+                    name: label.into(),
+                });
+            }
         }
     }
 
@@ -163,10 +194,14 @@ fn launch_macos_terminal(id: &str, path: &str) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_terminal(path: String, terminal_id: Option<String>) -> Result<(), String> {
+    if !Path::new(&path).is_dir() {
+        return Err("Ruta inválida".into());
+    }
+
     #[cfg(target_os = "macos")]
     {
         let id = terminal_id.unwrap_or_else(|| "terminal".to_string());
-        return launch_macos_terminal(&id, &path);
+        launch_macos_terminal(&id, &path)
     }
 
     #[cfg(target_os = "linux")]
@@ -198,16 +233,208 @@ pub fn open_terminal(path: String, terminal_id: Option<String>) -> Result<(), St
                 .spawn()
                 .map(|_| ())
                 .map_err(|e| e.to_string()),
+            // -WorkingDirectory takes the path as an isolated argument; no shell parsing.
             "pwsh" => Command::new("pwsh")
-                .args(["-NoExit", "-Command", &format!("Set-Location '{}'", path)])
+                .args(["-NoExit", "-WorkingDirectory", &path])
                 .spawn()
                 .map(|_| ())
                 .map_err(|e| e.to_string()),
+            // current_dir() avoids interpolating `path` into a `cd` string, blocking & | && injection.
             _ => Command::new("cmd")
-                .args(["/C", "start", "cmd", "/K", &format!("cd /d {}", path)])
+                .args(["/C", "start", "cmd", "/K"])
+                .current_dir(&path)
                 .spawn()
                 .map(|_| ())
                 .map_err(|e| e.to_string()),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RunOutcome {
+    /// The script was launched directly in the chosen terminal.
+    Direct,
+    /// Terminal doesn't support passing a command; the bash invocation was
+    /// copied to the system clipboard and the terminal opened in cwd. The
+    /// user is expected to paste + Enter.
+    FallbackClipboard,
+}
+
+#[cfg(target_os = "macos")]
+fn shell_quote(s: &str) -> String {
+    // POSIX-safe single-quote: ' → '\''
+    format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+#[cfg(target_os = "macos")]
+fn write_clipboard(text: &str) -> Result<(), String> {
+    use std::io::Write;
+    let mut child = std::process::Command::new("pbcopy")
+        .stdin(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    if let Some(stdin) = child.stdin.as_mut() {
+        stdin.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+    }
+    child.wait().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Run a shell script inside the chosen terminal emulator.
+/// Different terminals expose different mechanisms; we try the most direct one
+/// per terminal and fall back to clipboard-copy when not supported.
+#[tauri::command]
+pub fn run_in_terminal(
+    script_path: String,
+    terminal_id: Option<String>,
+) -> Result<RunOutcome, String> {
+    let path = Path::new(&script_path);
+    reject_traversal(path)?;
+    if !path.is_file() {
+        return Err("El archivo no existe".into());
+    }
+    let cwd = path
+        .parent()
+        .ok_or("Sin directorio padre")?
+        .to_string_lossy()
+        .into_owned();
+
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let id = terminal_id.unwrap_or_else(|| "terminal".to_string());
+        let quoted = shell_quote(&script_path);
+        let cmd = format!("bash {}", quoted);
+
+        // Direct-run terminals (pass the script via -e / shell-style flag).
+        match id.as_str() {
+            "terminal" => {
+                // Terminal.app handles `open -a Terminal <script>` natively if the
+                // script is executable. Otherwise wrap with bash.
+                Command::new("osascript")
+                    .args([
+                        "-e",
+                        &format!(
+                            r#"tell application "Terminal" to do script "{}""#,
+                            cmd.replace('"', "\\\"")
+                        ),
+                    ])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            "iterm" => {
+                let script = format!(
+                    r#"tell application "iTerm"
+                        activate
+                        create window with default profile
+                        tell current session of current window to write text "{}"
+                    end tell"#,
+                    cmd.replace('"', "\\\"")
+                );
+                Command::new("osascript")
+                    .args(["-e", &script])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            "ghostty" => {
+                Command::new("ghostty")
+                    .args(["-e", "bash", &script_path])
+                    .current_dir(&cwd)
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            "alacritty" => {
+                Command::new("alacritty")
+                    .args(["--working-directory", &cwd, "-e", "bash", &script_path])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            "kitty" => {
+                Command::new("kitty")
+                    .args(["--directory", &cwd, "bash", &script_path])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            "wezterm" => {
+                Command::new("wezterm")
+                    .args(["start", "--cwd", &cwd, "--", "bash", &script_path])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                return Ok(RunOutcome::Direct);
+            }
+            _ => {
+                // Warp / Hyper / Tabby / unknown: clipboard fallback.
+                write_clipboard(&cmd)?;
+                launch_macos_terminal(&id, &cwd)?;
+                return Ok(RunOutcome::FallbackClipboard);
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let id = terminal_id.unwrap_or_else(|| "x-terminal-emulator".to_string());
+        // Most Linux terminal emulators accept `-e` for the command to run.
+        let result = Command::new(&id)
+            .args(["--working-directory", &cwd, "-e", "bash", &script_path])
+            .spawn();
+        if result.is_ok() {
+            return Ok(RunOutcome::Direct);
+        }
+        // Fallback: -e without working-directory flag.
+        Command::new(&id)
+            .args(["-e", "bash", &script_path])
+            .current_dir(&cwd)
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())?;
+        Ok(RunOutcome::Direct)
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let id = terminal_id.unwrap_or_else(|| "cmd".to_string());
+        match id.as_str() {
+            "wt" => {
+                Command::new("wt")
+                    .args(["-d", &cwd, "cmd", "/K", &script_path])
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                Ok(RunOutcome::Direct)
+            }
+            "pwsh" => {
+                Command::new("pwsh")
+                    .args(["-NoExit", "-File", &script_path])
+                    .current_dir(&cwd)
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                Ok(RunOutcome::Direct)
+            }
+            _ => {
+                Command::new("cmd")
+                    .args(["/C", "start", "cmd", "/K", &script_path])
+                    .current_dir(&cwd)
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| e.to_string())?;
+                Ok(RunOutcome::Direct)
+            }
         }
     }
 }

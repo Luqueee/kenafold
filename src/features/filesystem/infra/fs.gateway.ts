@@ -13,6 +13,8 @@ export interface GrepHit {
 export type SortBy = "name" | "size" | "modified"
 export type SortDir = "asc" | "desc"
 
+export type RunOutcome = "direct" | "fallback_clipboard"
+
 export type Preview =
   | { kind: "text"; mime: string; content: string; truncated: boolean }
   | { kind: "image"; mime: string }
@@ -33,6 +35,8 @@ export const fsGateway = {
     invoke<DirectoryPage>("list_directory", { path, options: options ?? null }),
   home: () => invoke<string>("get_home_dir"),
   open: (path: string) => invoke<void>("open_file", { path }),
+  reveal: (path: string) => invoke<void>("reveal_in_file_manager", { path }),
+  duplicate: (src: string) => invoke<string>("duplicate_entry", { src }),
   preview: (path: string) => invoke<Preview>("preview_file", { path }),
   grep: (
     root: string,
@@ -87,6 +91,11 @@ export const fsGateway = {
   openTerminal: (path: string, terminalId?: string | null) =>
     invoke<void>("open_terminal", { path, terminalId: terminalId ?? null }),
   listTerminals: () => invoke<{ id: string; name: string }[]>("list_terminals"),
+  runInTerminal: (scriptPath: string, terminalId?: string | null) =>
+    invoke<RunOutcome>("run_in_terminal", {
+      scriptPath,
+      terminalId: terminalId ?? null,
+    }),
   smbList: () => invoke<SmbShare[]>("smb_list"),
   smbSave: (share: SmbShare, password?: string | null) =>
     invoke<SmbShare>("smb_save", { share, password: password ?? null }),

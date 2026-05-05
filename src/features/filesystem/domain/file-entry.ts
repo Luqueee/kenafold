@@ -16,3 +16,20 @@ export interface SearchResult {
   extension: string | null
   score: number
 }
+
+const SHELL_EXTENSIONS = new Set([
+  "sh",
+  "bash",
+  "zsh",
+  "fish",
+  "ksh",
+  "csh",
+  "command",
+])
+
+/** Whether this entry looks like a runnable shell script (by extension only). */
+export function isShellScript(entry: FileEntry): boolean {
+  if (entry.is_dir) return false
+  if (!entry.extension) return false
+  return SHELL_EXTENSIONS.has(entry.extension.toLowerCase())
+}
