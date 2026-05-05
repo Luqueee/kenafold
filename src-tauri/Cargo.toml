@@ -30,6 +30,9 @@ urlencoding = "2"
 sysinfo = "0.32"
 tar = "0.4"
 zstd = { version = "0.13", features = ["zstdmt"] }
+flate2 = "1"
+bzip2 = "0.4"
+zip = { version = "2", default-features = false, features = ["deflate", "bzip2", "zstd"] }
 trash = "5"
 grep = "0.3"
 notify = "8"

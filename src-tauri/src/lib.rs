@@ -131,6 +131,7 @@ pub fn run() {
             archive::compress_entries,
             archive::decompress_entry,
             archive::cancel_archive,
+            archive::list_archive_entries,
             preview::preview_file,
             grep::grep_content,
             search::search_files,

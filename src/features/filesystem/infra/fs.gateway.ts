@@ -2,6 +2,12 @@ import { invoke } from "@tauri-apps/api/core"
 import type { FileEntry, SearchResult } from "../domain/file-entry"
 import type { SmbShare } from "@/features/smb/domain/share"
 
+export interface ArchiveEntry {
+  path: string
+  size: number
+  isDir: boolean
+}
+
 export interface GrepHit {
   path: string
   line_number: number
@@ -92,6 +98,8 @@ export const fsGateway = {
     invoke<string>("decompress_entry", { path }),
   cancelArchive: (opId: string) =>
     invoke<void>("cancel_archive", { opId }),
+  listArchive: (path: string) =>
+    invoke<ArchiveEntry[]>("list_archive_entries", { path }),
   openTerminal: (path: string, terminalId?: string | null) =>
     invoke<void>("open_terminal", { path, terminalId: terminalId ?? null }),
   listTerminals: () => invoke<{ id: string; name: string }[]>("list_terminals"),
