@@ -111,6 +111,7 @@ pub fn run() {
 
             Ok(())
         })
+        .manage(archive::CancelMap::new())
         .manage(search::SearchIndex::default())
         .manage(system::SysState::default())
         .invoke_handler(tauri::generate_handler![
@@ -128,6 +129,8 @@ pub fn run() {
             fs::copy_entry,
             fs::move_entry,
             archive::compress_entries,
+            archive::decompress_entry,
+            archive::cancel_archive,
             preview::preview_file,
             grep::grep_content,
             search::search_files,

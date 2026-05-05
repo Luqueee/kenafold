@@ -27,6 +27,13 @@ const SHELL_EXTENSIONS = new Set([
   "command",
 ])
 
+/** Whether this entry is a decompressible archive (.zst or .tar.zst). */
+export function isArchive(entry: FileEntry): boolean {
+  if (entry.is_dir) return false
+  const n = entry.name.toLowerCase()
+  return n.endsWith(".tar.zst") || n.endsWith(".zst")
+}
+
 /** Whether this entry looks like a runnable shell script (by extension only). */
 export function isShellScript(entry: FileEntry): boolean {
   if (entry.is_dir) return false

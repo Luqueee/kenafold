@@ -20,6 +20,7 @@ import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import { useHistory } from "@/features/navigation/api/use-history"
 import { useFavorites } from "@/features/navigation/api/use-favorites"
 import { readLastPath, writeLastPath } from "@/features/file-explorer/hooks/use-explorer-prefs"
+import { ArchiveProgressPanel } from "@/features/file-explorer/components/archive-progress-panel"
 import { logger } from "@/shared/lib/logger"
 
 const sidebarStyle = {
@@ -36,6 +37,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settings = useSettings()
+
 
   // Persist the current directory so the next launch lands here.
   useEffect(() => {
@@ -128,6 +130,7 @@ export default function App() {
         onOpenFile={handleOpenFile}
       />
 
+      <ArchiveProgressPanel />
       <Toaster position="bottom-right" richColors closeButton />
     </>
   )

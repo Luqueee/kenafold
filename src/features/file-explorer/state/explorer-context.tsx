@@ -25,7 +25,7 @@ import {
   type PathSegment,
 } from "@/features/filesystem/domain/path"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
-import { isShellScript } from "@/features/filesystem/domain/file-entry"
+import { isShellScript, isArchive } from "@/features/filesystem/domain/file-entry"
 import { isMacJunk } from "@/features/filesystem/domain/mac-junk"
 import type { Clipboard } from "@/features/filesystem/domain/clipboard"
 import type { ContextMenuState } from "../types"
@@ -117,6 +117,7 @@ interface Value {
   handleActivate: (entry: FileEntry) => void
   handlePaste: () => Promise<void>
   compress: (paths: string[]) => Promise<void>
+  decompress: (path: string) => Promise<void>
   duplicate: (path: string) => Promise<void>
   reveal: (path: string) => void
   copyPathToClipboard: (path: string) => Promise<void>
@@ -273,6 +274,15 @@ export function FileExplorerProvider({
     if (paths.length === 0) return
     await ops.compress(paths, path)
   }, [ops, path])
+
+  const decompress = useCallback(async (p: string) => {
+    try {
+      await fsGateway.decompress(p)
+      reload()
+    } catch (e) {
+      toast.error(fsErrorMessage(e))
+    }
+  }, [reload])
 
   const duplicate = useCallback(async (p: string) => {
     await ops.duplicate(p)
@@ -559,6 +569,7 @@ export function FileExplorerProvider({
     handleActivate,
     handlePaste,
     compress,
+    decompress,
     duplicate,
     reveal,
     copyPathToClipboard,
@@ -589,7 +600,7 @@ export function FileExplorerProvider({
     deleteTargets, setDeleteTargets, confirmDelete, clipboardHas,
     dnd.draggingEntry, dnd.copyMode, viewMode, setViewMode,
     terminalId, onOpenSettings, segments, parent, dirCount, fileCount,
-    handleActivate, handlePaste, compress, duplicate, reveal, copyPathToClipboard, runInTerminal,
+    handleActivate, handlePaste, compress, decompress, duplicate, reveal, copyPathToClipboard, runInTerminal,
     sortBy, sortDir, setSortBy, setSortDir,
     showHidden, setShowHidden,
     quickLookEntry, openQuickLook, closeQuickLook,

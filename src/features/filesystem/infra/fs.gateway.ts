@@ -88,6 +88,10 @@ export const fsGateway = {
       destDir,
       archiveName: archiveName ?? null,
     }),
+  decompress: (path: string) =>
+    invoke<string>("decompress_entry", { path }),
+  cancelArchive: (opId: string) =>
+    invoke<void>("cancel_archive", { opId }),
   openTerminal: (path: string, terminalId?: string | null) =>
     invoke<void>("open_terminal", { path, terminalId: terminalId ?? null }),
   listTerminals: () => invoke<{ id: string; name: string }[]>("list_terminals"),

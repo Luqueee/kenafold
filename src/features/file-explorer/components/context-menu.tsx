@@ -14,9 +14,10 @@ import {
   Play,
   Trash2,
   Archive,
+  PackageOpen,
 } from "lucide-react"
 import { useFileExplorer } from "../state/explorer-context"
-import { isShellScript } from "@/features/filesystem/domain/file-entry"
+import { isShellScript, isArchive } from "@/features/filesystem/domain/file-entry"
 
 interface MenuItemProps {
   icon?: React.ReactNode
@@ -77,6 +78,7 @@ export function FileContextMenu() {
     selectedPaths,
     entries,
     compress,
+    decompress,
     duplicate,
     reveal,
     copyPathToClipboard,
@@ -99,6 +101,7 @@ export function FileContextMenu() {
       selectedPaths={selectedPaths}
       entries={entries}
       compress={compress}
+      decompress={decompress}
       duplicate={duplicate}
       reveal={reveal}
       copyPathToClipboard={copyPathToClipboard}
@@ -122,6 +125,7 @@ interface BodyProps {
   selectedPaths: ReturnType<typeof useFileExplorer>["selectedPaths"]
   entries: ReturnType<typeof useFileExplorer>["entries"]
   compress: ReturnType<typeof useFileExplorer>["compress"]
+  decompress: ReturnType<typeof useFileExplorer>["decompress"]
   duplicate: ReturnType<typeof useFileExplorer>["duplicate"]
   reveal: ReturnType<typeof useFileExplorer>["reveal"]
   copyPathToClipboard: ReturnType<typeof useFileExplorer>["copyPathToClipboard"]
@@ -143,6 +147,7 @@ function ContextMenuBody({
   selectedPaths,
   entries,
   compress,
+  decompress,
   duplicate,
   reveal,
   copyPathToClipboard,
@@ -292,6 +297,16 @@ function ContextMenuBody({
                 closeContextMenu()
               }}
             />
+            {entry && isArchive(entry) && (
+              <MenuItem
+                icon={<PackageOpen className="h-3.5 w-3.5" />}
+                label="Descomprimir"
+                onClick={() => {
+                  decompress(entry.path)
+                  closeContextMenu()
+                }}
+              />
+            )}
             <MenuDivider />
             <MenuItem
               icon={<Trash2 className="h-3.5 w-3.5" />}
