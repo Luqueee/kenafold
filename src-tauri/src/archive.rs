@@ -297,6 +297,8 @@ pub enum CompressFormat {
     TarGz,
     TarBz2,
     Zip,
+    SevenZ,
+    Rar,
 }
 
 impl CompressFormat {
@@ -305,6 +307,8 @@ impl CompressFormat {
             "tar.gz" | "tgz" => Self::TarGz,
             "tar.bz2" | "tbz2" => Self::TarBz2,
             "zip" => Self::Zip,
+            "7z" => Self::SevenZ,
+            "rar" => Self::Rar,
             _ => Self::TarZst,
         }
     }
@@ -316,6 +320,8 @@ impl CompressFormat {
             Self::TarGz  => "tar.gz",
             Self::TarBz2 => "tar.bz2",
             Self::Zip    => "zip",
+            Self::SevenZ => "7z",
+            Self::Rar    => "rar",
         }
     }
 
@@ -326,6 +332,116 @@ impl CompressFormat {
             _            => self.multi_ext(),
         }
     }
+}
+
+fn find_7z_cmd() -> Option<&'static str> {
+    for cmd in ["7z", "7za", "7zz"] {
+        if std::process::Command::new(cmd)
+            .arg("i")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .is_ok()
+        {
+            return Some(cmd);
+        }
+    }
+    None
+}
+
+fn run_compression_7z(
+    sources: &[PathBuf],
+    out_path: &Path,
+    level: CompressLevel,
+    on_progress: impl Fn(usize, usize, &str, u64),
+    should_cancel: impl Fn() -> bool,
+) -> Result<(), String> {
+    if should_cancel() {
+        return Err("__CANCELLED__".into());
+    }
+    let cmd_name = find_7z_cmd().ok_or_else(|| {
+        "Comando '7z' no encontrado. Instalá con: brew install sevenzip".to_string()
+    })?;
+
+    let mx = match level {
+        CompressLevel::Fast   => "1",
+        CompressLevel::Normal => "5",
+        CompressLevel::Best   => "9",
+    };
+
+    // out_path is the .partial file; 7z needs a .7z extension to auto-detect format.
+    let dir = out_path.parent().unwrap_or(Path::new("."));
+    let tmp = dir.join(format!(".kenafold_tmp_{}.7z", std::process::id()));
+
+    on_progress(1, sources.len(), "comprimiendo...", 0);
+
+    let mut cmd = std::process::Command::new(cmd_name);
+    cmd.arg("a").arg(format!("-mx={}", mx)).arg(&tmp);
+    for src in sources {
+        cmd.arg(src);
+    }
+
+    let output = cmd.output().map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+    }
+
+    std::fs::rename(&tmp, out_path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })?;
+
+    Ok(())
+}
+
+fn run_compression_rar(
+    sources: &[PathBuf],
+    out_path: &Path,
+    level: CompressLevel,
+    on_progress: impl Fn(usize, usize, &str, u64),
+    should_cancel: impl Fn() -> bool,
+) -> Result<(), String> {
+    if should_cancel() {
+        return Err("__CANCELLED__".into());
+    }
+
+    let m_flag = match level {
+        CompressLevel::Fast   => "-m1",
+        CompressLevel::Normal => "-m3",
+        CompressLevel::Best   => "-m5",
+    };
+
+    let dir = out_path.parent().unwrap_or(Path::new("."));
+    let tmp = dir.join(format!(".kenafold_tmp_{}.rar", std::process::id()));
+
+    on_progress(1, sources.len(), "comprimiendo...", 0);
+
+    let mut cmd = std::process::Command::new("rar");
+    cmd.arg("a").arg(m_flag).arg("-ep1").arg(&tmp);
+    for src in sources {
+        cmd.arg(src);
+    }
+
+    let output = cmd.output().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            "Comando 'rar' no encontrado. Instalá con: brew install rar".to_string()
+        } else {
+            e.to_string()
+        }
+    })?;
+
+    if !output.status.success() {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+    }
+
+    std::fs::rename(&tmp, out_path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })?;
+
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -878,6 +994,8 @@ pub async fn compress_entries(
             CompressFormat::Zip    => run_compression_zip(&sources, &partial_clone, lvl, on_progress, should_cancel),
             CompressFormat::TarGz  => run_compression_tar_gz(&sources, &partial_clone, lvl, on_progress, should_cancel),
             CompressFormat::TarBz2 => run_compression_tar_bz2(&sources, &partial_clone, lvl, on_progress, should_cancel),
+            CompressFormat::SevenZ => run_compression_7z(&sources, &partial_clone, lvl, on_progress, should_cancel),
+            CompressFormat::Rar    => run_compression_rar(&sources, &partial_clone, lvl, on_progress, should_cancel),
         }
     })
     .await

@@ -42,7 +42,9 @@ export function isArchive(entry: FileEntry): boolean {
     n.endsWith(".bz2") ||
     n.endsWith(".zip") ||
     n.endsWith(".tar") ||
-    n.endsWith(".iso")
+    n.endsWith(".iso") ||
+    n.endsWith(".7z") ||
+    n.endsWith(".rar")
   )
 }
 

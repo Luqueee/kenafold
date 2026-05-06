@@ -73,6 +73,8 @@ const COMPRESS_FORMATS = [
   { label: "TAR + ZSTD", ext: ".tar.zst", fmt: "tar.zst" },
   { label: "TAR + GZip", ext: ".tar.gz", fmt: "tar.gz" },
   { label: "TAR + BZip2", ext: ".tar.bz2", fmt: "tar.bz2" },
+  { label: "7-Zip", ext: ".7z", fmt: "7z" },
+  { label: "RAR", ext: ".rar", fmt: "rar" },
 ] as const
 
 const COMPRESS_LEVELS = [
@@ -451,7 +453,7 @@ function ContextMenuBody({
                   rect.top + TAG_PICKER_H > window.innerHeight - 8
                     ? Math.max(8, window.innerHeight - 8 - TAG_PICKER_H)
                     : rect.top
-                setTagPickerPos(tagPickerPos ? null : { x, y: y - 132 })
+                setTagPickerPos(tagPickerPos ? null : { x, y: y })
               }}
               className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm hover:bg-accent"
             >
