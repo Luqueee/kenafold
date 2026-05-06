@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FilePlus,
   FolderPlus,
+  Hash,
   Pencil,
   Play,
   Tag,
@@ -185,6 +186,7 @@ export function FileContextMenu() {
     reveal,
     copyPathToClipboard,
     runInTerminal,
+    openHashPanel,
   } = useFileExplorer()
 
   return contextMenu ? (
@@ -209,6 +211,7 @@ export function FileContextMenu() {
       reveal={reveal}
       copyPathToClipboard={copyPathToClipboard}
       runInTerminal={runInTerminal}
+      openHashPanel={openHashPanel}
     />
   ) : null
 }
@@ -234,6 +237,7 @@ interface BodyProps {
   reveal: ReturnType<typeof useFileExplorer>["reveal"]
   copyPathToClipboard: ReturnType<typeof useFileExplorer>["copyPathToClipboard"]
   runInTerminal: ReturnType<typeof useFileExplorer>["runInTerminal"]
+  openHashPanel: ReturnType<typeof useFileExplorer>["openHashPanel"]
 }
 
 function ContextMenuBody({
@@ -257,6 +261,7 @@ function ContextMenuBody({
   copyPathToClipboard,
   runInTerminal,
   startBulkRename,
+  openHashPanel,
 }: BodyProps) {
   const entry = contextMenu.entry
   const targetPaths =
@@ -391,6 +396,16 @@ function ContextMenuBody({
                 closeContextMenu()
               }}
             />
+            {entry && !entry.is_dir && targetPaths.length === 1 && (
+              <MenuItem
+                icon={<Hash className="h-3.5 w-3.5" />}
+                label="Calcular hashes"
+                onClick={() => {
+                  openHashPanel(entry)
+                  closeContextMenu()
+                }}
+              />
+            )}
             <MenuDivider />
             {targetPaths.length > 1 ? (
               <MenuItem

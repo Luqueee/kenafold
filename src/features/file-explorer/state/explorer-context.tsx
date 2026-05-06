@@ -44,6 +44,7 @@ import { describeUndoOp } from "@/features/filesystem/domain/undo-op"
 import { tagsGateway } from "@/features/tags/infra/tags.gateway"
 import { useExplorerHotkeys } from "../hooks/use-explorer-hotkeys"
 import { BulkRenameModal } from "../components/bulk-rename-modal"
+import { HashPanel } from "../components/hash-panel"
 
 export type { InlineMode, ViewMode }
 
@@ -155,6 +156,10 @@ interface Value {
   startBulkRename: (entries: FileEntry[]) => void
   cancelBulkRename: () => void
   commitBulkRename: (renames: Array<{ src: string; newName: string }>) => Promise<void>
+
+  hashPanelEntry: FileEntry | null
+  openHashPanel: (entry: FileEntry) => void
+  closeHashPanel: () => void
 }
 
 const Ctx = createContext<Value | null>(null)
@@ -402,6 +407,10 @@ export function FileExplorerProvider({
   const openQuickLook = useCallback((e: FileEntry) => setQuickLookEntry(e), [])
   const closeQuickLook = useCallback(() => setQuickLookEntry(null), [])
 
+  const [hashPanelEntry, setHashPanelEntry] = useState<FileEntry | null>(null)
+  const openHashPanel = useCallback((e: FileEntry) => setHashPanelEntry(e), [])
+  const closeHashPanel = useCallback(() => setHashPanelEntry(null), [])
+
   const [bulkRenameEntries, setBulkRenameEntries] = useState<FileEntry[] | null>(null)
   const startBulkRename = useCallback((e: FileEntry[]) => setBulkRenameEntries(e), [])
   const cancelBulkRename = useCallback(() => setBulkRenameEntries(null), [])
@@ -637,6 +646,9 @@ export function FileExplorerProvider({
       startBulkRename,
       cancelBulkRename,
       commitBulkRename,
+      hashPanelEntry,
+      openHashPanel,
+      closeHashPanel,
     }),
     [
       path,
@@ -719,6 +731,9 @@ export function FileExplorerProvider({
       startBulkRename,
       cancelBulkRename,
       commitBulkRename,
+      hashPanelEntry,
+      openHashPanel,
+      closeHashPanel,
     ]
   )
 
@@ -751,6 +766,9 @@ export function FileExplorerProvider({
           )}
         </DragOverlay>
       </DndContext>
+      {hashPanelEntry && (
+        <HashPanel entry={hashPanelEntry} onClose={closeHashPanel} />
+      )}
       {bulkRenameEntries && (
         <BulkRenameModal
           entries={bulkRenameEntries}
