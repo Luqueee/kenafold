@@ -48,10 +48,22 @@ function formatMtime(secs: number | null): string {
 }
 
 const STATUS_BADGE: Record<DiffStatus, { label: string; className: string }> = {
-  identical: { label: "Idéntico", className: "bg-green-500/15 text-green-600 dark:text-green-400" },
-  different: { label: "Distinto", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  only_a: { label: "Solo A", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  only_b: { label: "Solo B", className: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
+  identical: {
+    label: "Idéntico",
+    className: "bg-green-500/15 text-green-600 dark:text-green-400",
+  },
+  different: {
+    label: "Distinto",
+    className: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  },
+  only_a: {
+    label: "Solo A",
+    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  },
+  only_b: {
+    label: "Solo B",
+    className: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+  },
 }
 
 interface HashState {
@@ -109,7 +121,12 @@ export function FolderComparatorPanel({ onClose }: Props) {
     if (entry.isDir) return
     setHashStates((prev) => ({
       ...prev,
-      [entry.name]: { loading: true, match: null, sha256A: null, sha256B: null },
+      [entry.name]: {
+        loading: true,
+        match: null,
+        sha256A: null,
+        sha256B: null,
+      },
     }))
     try {
       const [hashA, hashB] = await Promise.all([
@@ -122,7 +139,8 @@ export function FolderComparatorPanel({ onClose }: Props) {
         ...prev,
         [entry.name]: {
           loading: false,
-          match: sha256A !== null && sha256B !== null ? sha256A === sha256B : null,
+          match:
+            sha256A !== null && sha256B !== null ? sha256A === sha256B : null,
           sha256A,
           sha256B,
         },
@@ -130,16 +148,22 @@ export function FolderComparatorPanel({ onClose }: Props) {
     } catch {
       setHashStates((prev) => ({
         ...prev,
-        [entry.name]: { loading: false, match: null, sha256A: null, sha256B: null },
+        [entry.name]: {
+          loading: false,
+          match: null,
+          sha256A: null,
+          sha256B: null,
+        },
       }))
     }
   }
 
-  const filtered = entries?.filter((e) => {
-    if (filter === "all") return true
-    if (filter === "different") return e.status === "different"
-    return e.status === filter
-  }) ?? []
+  const filtered =
+    entries?.filter((e) => {
+      if (filter === "all") return true
+      if (filter === "different") return e.status === "different"
+      return e.status === filter
+    }) ?? []
 
   const counts = entries
     ? {
@@ -153,9 +177,11 @@ export function FolderComparatorPanel({ onClose }: Props) {
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
-      <div className="flex h-[80vh] w-[780px] max-w-[95vw] flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
+      <div className="flex h-[80vh] w-195 max-w-[95vw] flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
         {/* Header */}
         <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
           <span className="flex-1 text-sm font-medium">Comparar carpetas</span>
@@ -170,7 +196,9 @@ export function FolderComparatorPanel({ onClose }: Props) {
         {/* Path inputs */}
         <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
           <div className="flex flex-1 flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Carpeta A</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Carpeta A
+            </span>
             <Input
               value={dirA}
               onChange={(e) => setDirA(e.target.value)}
@@ -181,7 +209,9 @@ export function FolderComparatorPanel({ onClose }: Props) {
           </div>
           <ArrowRight className="mt-5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="flex flex-1 flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Carpeta B</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Carpeta B
+            </span>
             <Input
               ref={dirBRef}
               value={dirB}
@@ -197,7 +227,11 @@ export function FolderComparatorPanel({ onClose }: Props) {
             onClick={compare}
             disabled={!dirA || !dirB || loading}
           >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Comparar"}
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              "Comparar"
+            )}
           </Button>
         </div>
 
@@ -206,9 +240,7 @@ export function FolderComparatorPanel({ onClose }: Props) {
           <div className="flex shrink-0 items-center gap-1 border-b border-border/60 px-4 py-2">
             {(["all", "different", "only_a", "only_b"] as const).map((f) => {
               const count =
-                f === "all"
-                  ? entries!.length
-                  : counts[f as keyof typeof counts]
+                f === "all" ? entries!.length : counts[f as keyof typeof counts]
               const label =
                 f === "all"
                   ? "Todos"
@@ -276,9 +308,13 @@ export function FolderComparatorPanel({ onClose }: Props) {
                   const badge = STATUS_BADGE[entry.status]
                   const hs = hashStates[entry.name]
                   const sizeDiff =
-                    entry.sizeA !== null && entry.sizeB !== null && entry.sizeA !== entry.sizeB
+                    entry.sizeA !== null &&
+                    entry.sizeB !== null &&
+                    entry.sizeA !== entry.sizeB
                   const mtimeDiff =
-                    entry.mtimeA !== null && entry.mtimeB !== null && entry.mtimeA !== entry.mtimeB
+                    entry.mtimeA !== null &&
+                    entry.mtimeB !== null &&
+                    entry.mtimeA !== entry.mtimeB
                   return (
                     <tr
                       key={entry.name}
@@ -290,34 +326,52 @@ export function FolderComparatorPanel({ onClose }: Props) {
                         ) : (
                           <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         )}
-                        <span className="max-w-[180px] truncate">{entry.name}</span>
+                        <span className="max-w-45 truncate">{entry.name}</span>
                       </td>
                       <td className="px-2 py-1.5">
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}
+                        >
                           {badge.label}
                         </span>
                       </td>
-                      <td className={`px-2 py-1.5 text-right font-mono ${sizeDiff ? "text-amber-500" : ""}`}>
+                      <td
+                        className={`px-2 py-1.5 text-right font-mono ${sizeDiff ? "text-amber-500" : ""}`}
+                      >
                         {formatSize(entry.sizeA)}
                       </td>
-                      <td className={`px-2 py-1.5 text-right font-mono ${sizeDiff ? "text-amber-500" : ""}`}>
+                      <td
+                        className={`px-2 py-1.5 text-right font-mono ${sizeDiff ? "text-amber-500" : ""}`}
+                      >
                         {formatSize(entry.sizeB)}
                       </td>
-                      <td className={`px-2 py-1.5 ${mtimeDiff ? "text-amber-500" : "text-muted-foreground"}`}>
+                      <td
+                        className={`px-2 py-1.5 ${mtimeDiff ? "text-amber-500" : "text-muted-foreground"}`}
+                      >
                         {formatMtime(entry.mtimeA)}
                       </td>
-                      <td className={`px-2 py-1.5 ${mtimeDiff ? "text-amber-500" : "text-muted-foreground"}`}>
+                      <td
+                        className={`px-2 py-1.5 ${mtimeDiff ? "text-amber-500" : "text-muted-foreground"}`}
+                      >
                         {formatMtime(entry.mtimeB)}
                       </td>
                       <td className="px-2 py-1.5">
-                        {!entry.isDir && entry.status !== "only_a" && entry.status !== "only_b" && (
-                          hs?.loading ? (
+                        {!entry.isDir &&
+                          entry.status !== "only_a" &&
+                          entry.status !== "only_b" &&
+                          (hs?.loading ? (
                             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                           ) : hs?.match !== null && hs?.match !== undefined ? (
                             hs.match ? (
-                              <Check className="h-3.5 w-3.5 text-green-500" aria-label="Hash idéntico" />
+                              <Check
+                                className="h-3.5 w-3.5 text-green-500"
+                                aria-label="Hash idéntico"
+                              />
                             ) : (
-                              <AlertCircle className="h-3.5 w-3.5 text-destructive" aria-label="Hash distinto" />
+                              <AlertCircle
+                                className="h-3.5 w-3.5 text-destructive"
+                                aria-label="Hash distinto"
+                              />
                             )
                           ) : (
                             <button
@@ -327,8 +381,7 @@ export function FolderComparatorPanel({ onClose }: Props) {
                             >
                               <Hash className="h-3.5 w-3.5" />
                             </button>
-                          )
-                        )}
+                          ))}
                       </td>
                     </tr>
                   )
@@ -343,7 +396,8 @@ export function FolderComparatorPanel({ onClose }: Props) {
           <div className="flex shrink-0 items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
             <span>{entries.length} entradas comparadas</span>
             <span>
-              {counts!.identical} idénticas · {counts!.different} distintas · {counts!.only_a} solo A · {counts!.only_b} solo B
+              {counts!.identical} idénticas · {counts!.different} distintas ·{" "}
+              {counts!.only_a} solo A · {counts!.only_b} solo B
             </span>
           </div>
         )}

@@ -25,43 +25,47 @@ interface SliderProps {
 function Slider({ value, onChange, width = "w-full" }: SliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
 
-  const calc = useCallback((clientX: number) => {
-    const rect = trackRef.current?.getBoundingClientRect()
-    if (!rect) return
-    onChange(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)))
-  }, [onChange])
+  const calc = useCallback(
+    (clientX: number) => {
+      const rect = trackRef.current?.getBoundingClientRect()
+      if (!rect) return
+      onChange(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)))
+    },
+    [onChange]
+  )
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    calc(e.clientX)
-    const onMove = (ev: MouseEvent) => calc(ev.clientX)
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove)
-      window.removeEventListener("mouseup", onUp)
-    }
-    window.addEventListener("mousemove", onMove)
-    window.addEventListener("mouseup", onUp)
-  }, [calc])
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      calc(e.clientX)
+      const onMove = (ev: MouseEvent) => calc(ev.clientX)
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove)
+        window.removeEventListener("mouseup", onUp)
+      }
+      window.addEventListener("mousemove", onMove)
+      window.addEventListener("mouseup", onUp)
+    },
+    [calc]
+  )
 
   const pct = `${(value * 100).toFixed(1)}%`
 
   return (
     <div
       ref={trackRef}
-      className={`group/sl relative flex h-4 cursor-pointer select-none items-center ${width}`}
+      className={`group/sl relative flex h-4 cursor-pointer items-center select-none ${width}`}
       onMouseDown={onMouseDown}
     >
       {/* Track */}
-      <div className="h-[3px] w-full overflow-visible rounded-full bg-white/20 transition-[height] duration-150 group-hover/sl:h-[5px]">
+      <div className="h-0.75 w-full overflow-visible rounded-full bg-white/20 transition-[height] duration-150 group-hover/sl:h-1.25">
         {/* Fill */}
         <div
           className="relative h-full rounded-full bg-primary"
           style={{ width: pct }}
         >
           {/* Thumb */}
-          <span
-            className="absolute -right-[6px] top-1/2 h-[12px] w-[12px] -translate-y-1/2 scale-0 rounded-full bg-white shadow-md transition-transform duration-150 group-hover/sl:scale-100"
-          />
+          <span className="h-h-3-[12px] absolute top-1/2 -right-1.5 -translate-y-1/2 scale-0 rounded-full bg-white shadow-md transition-transform duration-150 group-hover/sl:scale-100" />
         </div>
       </div>
     </div>
@@ -105,12 +109,19 @@ export function VideoPlayer({ src, compact }: Props) {
     if (playing) scheduleHide()
   }, [playing, scheduleHide])
 
-  useEffect(() => () => {
-    if (hideTimer.current) clearTimeout(hideTimer.current)
-    if (volTimer.current) clearTimeout(volTimer.current)
-    const v = videoRef.current
-    if (v) { v.pause(); v.src = ""; v.load() }
-  }, [])
+  useEffect(
+    () => () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current)
+      if (volTimer.current) clearTimeout(volTimer.current)
+      const v = videoRef.current
+      if (v) {
+        v.pause()
+        v.src = ""
+        v.load()
+      }
+    },
+    []
+  )
 
   // Actions
   const togglePlay = useCallback(() => {
@@ -120,11 +131,14 @@ export function VideoPlayer({ src, compact }: Props) {
     else v.pause()
   }, [])
 
-  const seekTo = useCallback((ratio: number) => {
-    const v = videoRef.current
-    if (!v || !isFinite(duration)) return
-    v.currentTime = ratio * duration
-  }, [duration])
+  const seekTo = useCallback(
+    (ratio: number) => {
+      const v = videoRef.current
+      if (!v || !isFinite(duration)) return
+      v.currentTime = ratio * duration
+    },
+    [duration]
+  )
 
   const applyVolume = useCallback((val: number) => {
     const v = videoRef.current
@@ -203,7 +217,10 @@ export function VideoPlayer({ src, compact }: Props) {
         src={src}
         className="max-h-full max-w-full cursor-pointer"
         onClick={togglePlay}
-        onPlay={() => { setPlaying(true); scheduleHide() }}
+        onPlay={() => {
+          setPlaying(true)
+          scheduleHide()
+        }}
         onPause={() => {
           setPlaying(false)
           if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -237,14 +254,14 @@ export function VideoPlayer({ src, compact }: Props) {
 
       {/* Volume % toast */}
       {showVolumePct && (
-        <div className="pointer-events-none absolute top-4 right-4 rounded-md bg-black/70 px-2 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
+        <div className="pointer-events-none absolute top-4 right-4 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white tabular-nums backdrop-blur-sm">
           {volumePct}%
         </div>
       )}
 
       {/* Controls bar */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-10 transition-opacity duration-300 ${
+        className={`absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 via-black/40 to-transparent px-4 pt-10 pb-3 transition-opacity duration-300 ${
           showControls ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
@@ -260,14 +277,15 @@ export function VideoPlayer({ src, compact }: Props) {
             onClick={togglePlay}
             className="rounded p-0.5 transition-colors hover:text-primary"
           >
-            {playing
-              ? <Pause className="h-4 w-4 fill-current" />
-              : <Play className="h-4 w-4 fill-current" />
-            }
+            {playing ? (
+              <Pause className="h-4 w-4 fill-current" />
+            ) : (
+              <Play className="h-4 w-4 fill-current" />
+            )}
           </button>
 
           {/* Time */}
-          <span className="text-xs tabular-nums text-white/60">
+          <span className="text-xs text-white/60 tabular-nums">
             {formatTime(currentTime)}
             <span className="mx-1 text-white/30">/</span>
             {formatTime(duration)}
@@ -287,7 +305,7 @@ export function VideoPlayer({ src, compact }: Props) {
                 onChange={applyVolume}
                 width="w-20"
               />
-              <span className="w-6 text-right text-[11px] tabular-nums text-white/50">
+              <span className="w-6 text-right text-[11px] text-white/50 tabular-nums">
                 {volumePct}%
               </span>
             </div>

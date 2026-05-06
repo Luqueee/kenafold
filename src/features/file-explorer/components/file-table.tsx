@@ -16,6 +16,7 @@ import { InlineEditInput } from "./inline-edit-input"
 const ROW_HEIGHT = 36
 
 export function FileTable() {
+  "use no memo"
   const {
     entries,
     filteredEntries,
@@ -170,6 +171,7 @@ function VirtualTable() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: filteredEntries.length,
     getScrollElement: () => tableRef.current,

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { X, Folder, File, HardDrive, Loader2 } from "lucide-react"
@@ -29,7 +30,8 @@ export function DiskUsagePanel({ onClose }: Props) {
 
   useEffect(() => {
     setLoading(true)
-    fsGateway.diskUsage(path)
+    fsGateway
+      .diskUsage(path)
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false))
@@ -39,7 +41,7 @@ export function DiskUsagePanel({ onClose }: Props) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="flex w-[560px] max-w-[90vw] flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
+      <div className="flex w-140 max-w-[90vw] flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
         <div className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
           <HardDrive className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 truncate text-sm font-medium">{path}</span>
@@ -69,13 +71,21 @@ export function DiskUsagePanel({ onClose }: Props) {
                   <li
                     key={e.path}
                     className="group flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-muted/50"
-                    onClick={() => { if (e.is_dir) { onNavigate(e.path); onClose() } }}
+                    onClick={() => {
+                      if (e.is_dir) {
+                        onNavigate(e.path)
+                        onClose()
+                      }
+                    }}
                   >
-                    {e.is_dir
-                      ? <Folder className="h-4 w-4 shrink-0 fill-blue-400/30 text-blue-400" />
-                      : <File className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    }
-                    <span className="min-w-0 flex-1 truncate text-sm">{e.name}</span>
+                    {e.is_dir ? (
+                      <Folder className="h-4 w-4 shrink-0 fill-blue-400/30 text-blue-400" />
+                    ) : (
+                      <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {e.name}
+                    </span>
                     <div className="flex w-32 shrink-0 items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
@@ -97,7 +107,9 @@ export function DiskUsagePanel({ onClose }: Props) {
         {!loading && total > 0 && (
           <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
             <span>{entries.length} elementos</span>
-            <span className="font-mono font-medium">{formatSize(total)} total</span>
+            <span className="font-mono font-medium">
+              {formatSize(total)} total
+            </span>
           </div>
         )}
       </div>

@@ -20,6 +20,7 @@ const TILE_H = 136
 const PADDING = 12
 
 export function FileGrid() {
+  "use no memo"
   const {
     filteredEntries,
     isSelected,
@@ -59,6 +60,7 @@ export function FileGrid() {
 
   const rowCount = Math.max(1, Math.ceil(items.length / cols))
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => tableRef.current,
