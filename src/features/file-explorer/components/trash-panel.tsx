@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function TrashPanel({ onClose, restorePath, onRestored }: Props) {
-  const [trashDir, setTrashDir] = useState<string | null>(null)
+  const [, setTrashDir] = useState<string | null>(null)
   const [entries, setEntries] = useState<TrashEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -168,14 +168,14 @@ export function TrashPanel({ onClose, restorePath, onRestored }: Props) {
               key={entry.name}
               className="group flex items-center gap-3 border-b border-border/40 px-4 py-2.5 hover:bg-muted/30"
             >
-              {entry.isDir
+              {entry.is_dir
                 ? <Folder className="h-4 w-4 shrink-0 fill-blue-400/30 text-blue-400" />
                 : <File className="h-4 w-4 shrink-0 text-muted-foreground" />
               }
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{entry.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.isDir ? "Carpeta" : formatSize(entry.size)} · {formatDate(entry.modified)}
+                  {entry.is_dir ? "Carpeta" : formatSize(entry.size)} · {formatDate(entry.modified)}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

@@ -315,9 +315,9 @@ export function FolderComparatorPanel({ onClose }: Props) {
                             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                           ) : hs?.match !== null && hs?.match !== undefined ? (
                             hs.match ? (
-                              <Check className="h-3.5 w-3.5 text-green-500" title="Hash idéntico" />
+                              <Check className="h-3.5 w-3.5 text-green-500" aria-label="Hash idéntico" />
                             ) : (
-                              <AlertCircle className="h-3.5 w-3.5 text-destructive" title="Hash distinto" />
+                              <AlertCircle className="h-3.5 w-3.5 text-destructive" aria-label="Hash distinto" />
                             )
                           ) : (
                             <button
