@@ -1514,6 +1514,24 @@ pub async fn list_archive_entries(path: String) -> Result<Vec<ArchiveEntry>, Str
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::AtomicUsize;
+
+    static TEST_ID: AtomicUsize = AtomicUsize::new(0);
+
+    fn tmp_dir(tag: &str) -> PathBuf {
+        let id = TEST_ID.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir()
+            .join(format!("kenafold_test_{}_{}_{}", std::process::id(), id, tag));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn noop_progress4(_: usize, _: usize, _: &str, _: u64) {}
+    fn noop_progress3(_: usize, _: &str) {}
+    fn no_cancel() -> bool { false }
+    fn yes_cancel() -> bool { true }
+
+    // --- build_suffixed ---
 
     #[test]
     fn build_suffixed_preserves_tar_zst() {
@@ -1539,6 +1557,127 @@ mod tests {
         assert_eq!(p, Path::new("/tmp/README (1)"));
     }
 
+    // --- detect_kind ---
+
+    #[test]
+    fn detect_kind_tar_zst() {
+        let (k, stem) = detect_kind("archive.tar.zst").unwrap();
+        assert!(matches!(k, ArchiveKind::TarZst));
+        assert_eq!(stem, "archive");
+    }
+
+    #[test]
+    fn detect_kind_tar_gz() {
+        let (k, stem) = detect_kind("data.tar.gz").unwrap();
+        assert!(matches!(k, ArchiveKind::TarGz));
+        assert_eq!(stem, "data");
+    }
+
+    #[test]
+    fn detect_kind_tgz() {
+        let (k, stem) = detect_kind("data.tgz").unwrap();
+        assert!(matches!(k, ArchiveKind::TarGz));
+        assert_eq!(stem, "data");
+    }
+
+    #[test]
+    fn detect_kind_tar_bz2() {
+        let (k, stem) = detect_kind("backup.tar.bz2").unwrap();
+        assert!(matches!(k, ArchiveKind::TarBz2));
+        assert_eq!(stem, "backup");
+    }
+
+    #[test]
+    fn detect_kind_zip() {
+        let (k, stem) = detect_kind("project.zip").unwrap();
+        assert!(matches!(k, ArchiveKind::Zip));
+        assert_eq!(stem, "project");
+    }
+
+    #[test]
+    fn detect_kind_zst_raw() {
+        let (k, stem) = detect_kind("file.txt.zst").unwrap();
+        assert!(matches!(k, ArchiveKind::Zst));
+        assert_eq!(stem, "file.txt");
+    }
+
+    #[test]
+    fn detect_kind_gz_raw() {
+        let (k, stem) = detect_kind("file.gz").unwrap();
+        assert!(matches!(k, ArchiveKind::Gz));
+        assert_eq!(stem, "file");
+    }
+
+    #[test]
+    fn detect_kind_bz2_raw() {
+        let (k, stem) = detect_kind("file.bz2").unwrap();
+        assert!(matches!(k, ArchiveKind::Bz2));
+        assert_eq!(stem, "file");
+    }
+
+    #[test]
+    fn detect_kind_tar() {
+        let (k, stem) = detect_kind("dump.tar").unwrap();
+        assert!(matches!(k, ArchiveKind::Tar));
+        assert_eq!(stem, "dump");
+    }
+
+    #[test]
+    fn detect_kind_iso() {
+        let (k, stem) = detect_kind("macos.iso").unwrap();
+        assert!(matches!(k, ArchiveKind::Iso));
+        assert_eq!(stem, "macos");
+    }
+
+    #[test]
+    fn detect_kind_case_insensitive() {
+        let (k, _) = detect_kind("ARCHIVE.ZIP").unwrap();
+        assert!(matches!(k, ArchiveKind::Zip));
+    }
+
+    #[test]
+    fn detect_kind_unknown_returns_none() {
+        assert!(detect_kind("file.txt").is_none());
+        assert!(detect_kind("noext").is_none());
+    }
+
+    // --- is_incompressible ---
+
+    #[test]
+    fn is_incompressible_image_formats() {
+        for ext in ["jpg", "jpeg", "png", "gif", "webp", "avif"] {
+            assert!(
+                is_incompressible(Path::new(&format!("file.{}", ext))),
+                "{} should be incompressible",
+                ext
+            );
+        }
+    }
+
+    #[test]
+    fn is_incompressible_video_formats() {
+        for ext in ["mp4", "mkv", "mov", "avi", "webm"] {
+            assert!(is_incompressible(Path::new(&format!("file.{}", ext))));
+        }
+    }
+
+    #[test]
+    fn is_incompressible_already_compressed() {
+        for ext in ["zip", "gz", "bz2", "zst", "7z"] {
+            assert!(is_incompressible(Path::new(&format!("file.{}", ext))));
+        }
+    }
+
+    #[test]
+    fn is_incompressible_text_files_are_compressible() {
+        assert!(!is_incompressible(Path::new("doc.txt")));
+        assert!(!is_incompressible(Path::new("code.rs")));
+        assert!(!is_incompressible(Path::new("data.json")));
+        assert!(!is_incompressible(Path::new("no_extension")));
+    }
+
+    // --- detect_collisions ---
+
     #[test]
     fn detect_collisions_flags_duplicate_names() {
         let sources = vec![
@@ -1557,6 +1696,8 @@ mod tests {
         assert!(detect_collisions(&sources).is_ok());
     }
 
+    // --- CancelMap ---
+
     #[test]
     fn cancel_map_register_and_cancel() {
         let map = CancelMap::new();
@@ -1565,14 +1706,330 @@ mod tests {
         map.cancel("test-1");
         assert!(flag.load(Ordering::Relaxed));
         map.unregister("test-1");
-        // After unregister, flag is still usable via the Arc clone
         assert!(flag.load(Ordering::Relaxed));
     }
 
     #[test]
     fn cancel_map_cancel_unknown_id_is_noop() {
         let map = CancelMap::new();
-        // Should not panic
         map.cancel("nonexistent");
+    }
+
+    #[test]
+    fn cancel_map_unregister_removes_entry() {
+        let map = CancelMap::new();
+        map.register("op-1");
+        map.unregister("op-1");
+        // Cancel on removed entry is a noop — should not panic
+        map.cancel("op-1");
+    }
+
+    #[test]
+    fn cancel_map_multiple_ops_independent() {
+        let map = CancelMap::new();
+        let f1 = map.register("op-a");
+        let f2 = map.register("op-b");
+        map.cancel("op-a");
+        assert!(f1.load(Ordering::Relaxed));
+        assert!(!f2.load(Ordering::Relaxed));
+    }
+
+    // --- Roundtrip: ZIP ---
+
+    #[test]
+    fn roundtrip_zip_single_file() {
+        let dir = tmp_dir("zip_single");
+        let src = dir.join("hello.txt");
+        std::fs::write(&src, b"hello kenafold").unwrap();
+
+        let archive = dir.join("hello.zip");
+        run_compression_zip(&[src], &archive, CompressLevel::Normal, noop_progress4, no_cancel)
+            .unwrap();
+        assert!(archive.exists());
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(&archive, &out_dir, ArchiveKind::Zip, |_, _, _| {}, no_cancel).unwrap();
+
+        assert_eq!(
+            std::fs::read(out_dir.join("hello.txt")).unwrap(),
+            b"hello kenafold"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn roundtrip_zip_multiple_files() {
+        let dir = tmp_dir("zip_multi");
+        let src_a = dir.join("a.txt");
+        let src_b = dir.join("b.txt");
+        std::fs::write(&src_a, b"file a").unwrap();
+        std::fs::write(&src_b, b"file b").unwrap();
+
+        let archive = dir.join("multi.zip");
+        run_compression_zip(
+            &[src_a, src_b],
+            &archive,
+            CompressLevel::Fast,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(&archive, &out_dir, ArchiveKind::Zip, |_, _, _| {}, no_cancel).unwrap();
+
+        assert_eq!(std::fs::read(out_dir.join("a.txt")).unwrap(), b"file a");
+        assert_eq!(std::fs::read(out_dir.join("b.txt")).unwrap(), b"file b");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Roundtrip: ZST (raw single file) ---
+
+    #[test]
+    fn roundtrip_zst_single_file() {
+        let dir = tmp_dir("zst_single");
+        let src = dir.join("data.txt");
+        std::fs::write(&src, b"kenafold zst data").unwrap();
+
+        let archive = dir.join("data.txt.zst");
+        run_compression_zst(
+            &[src],
+            &archive,
+            true,
+            CompressLevel::Normal,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+        assert!(archive.exists());
+
+        let out_file = dir.join("data_restored.txt");
+        run_decompression(&archive, &out_file, ArchiveKind::Zst, |_, _, _| {}, no_cancel)
+            .unwrap();
+
+        assert_eq!(
+            std::fs::read(&out_file).unwrap(),
+            b"kenafold zst data"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Roundtrip: TAR.ZST (multi-file) ---
+
+    #[test]
+    fn roundtrip_tar_zst_multi_file() {
+        let dir = tmp_dir("tar_zst_multi");
+        let src_a = dir.join("alpha.txt");
+        let src_b = dir.join("beta.txt");
+        std::fs::write(&src_a, b"alpha content").unwrap();
+        std::fs::write(&src_b, b"beta content").unwrap();
+
+        let archive = dir.join("archive.tar.zst");
+        run_compression_zst(
+            &[src_a, src_b],
+            &archive,
+            false,
+            CompressLevel::Fast,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+        assert!(archive.exists());
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(
+            &archive,
+            &out_dir,
+            ArchiveKind::TarZst,
+            |_, _, _| {},
+            no_cancel,
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read(out_dir.join("alpha.txt")).unwrap(),
+            b"alpha content"
+        );
+        assert_eq!(
+            std::fs::read(out_dir.join("beta.txt")).unwrap(),
+            b"beta content"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Roundtrip: TAR.GZ ---
+
+    #[test]
+    fn roundtrip_tar_gz() {
+        let dir = tmp_dir("tar_gz");
+        let src = dir.join("file.txt");
+        std::fs::write(&src, b"gz roundtrip content").unwrap();
+
+        let archive = dir.join("out.tar.gz");
+        run_compression_tar_gz(
+            &[src],
+            &archive,
+            CompressLevel::Normal,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+        assert!(archive.exists());
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(
+            &archive,
+            &out_dir,
+            ArchiveKind::TarGz,
+            |_, _, _| {},
+            no_cancel,
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read(out_dir.join("file.txt")).unwrap(),
+            b"gz roundtrip content"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Roundtrip: TAR.BZ2 ---
+
+    #[test]
+    fn roundtrip_tar_bz2() {
+        let dir = tmp_dir("tar_bz2");
+        let src = dir.join("file.txt");
+        std::fs::write(&src, b"bz2 roundtrip content").unwrap();
+
+        let archive = dir.join("out.tar.bz2");
+        run_compression_tar_bz2(
+            &[src],
+            &archive,
+            CompressLevel::Normal,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+        assert!(archive.exists());
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(
+            &archive,
+            &out_dir,
+            ArchiveKind::TarBz2,
+            |_, _, _| {},
+            no_cancel,
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read(out_dir.join("file.txt")).unwrap(),
+            b"bz2 roundtrip content"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Roundtrip: directory ---
+
+    #[test]
+    fn roundtrip_zip_directory() {
+        let dir = tmp_dir("zip_dir");
+        let src_dir = dir.join("mydir");
+        std::fs::create_dir_all(&src_dir).unwrap();
+        std::fs::write(src_dir.join("inner.txt"), b"inner file").unwrap();
+
+        let archive = dir.join("mydir.zip");
+        run_compression_zip(
+            &[src_dir],
+            &archive,
+            CompressLevel::Normal,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+
+        let out_dir = dir.join("out");
+        std::fs::create_dir_all(&out_dir).unwrap();
+        run_decompression(&archive, &out_dir, ArchiveKind::Zip, |_, _, _| {}, no_cancel).unwrap();
+
+        assert_eq!(
+            std::fs::read(out_dir.join("mydir").join("inner.txt")).unwrap(),
+            b"inner file"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- Cancellation ---
+
+    #[test]
+    fn compress_zst_cancelled_at_start_returns_cancelled() {
+        let dir = tmp_dir("zst_cancel");
+        let src = dir.join("file.txt");
+        std::fs::write(&src, b"some data").unwrap();
+
+        let archive = dir.join("archive.zst");
+        let result = run_compression_zst(
+            &[src],
+            &archive,
+            true,
+            CompressLevel::Normal,
+            noop_progress4,
+            yes_cancel,
+        );
+
+        assert_eq!(result.unwrap_err(), "__CANCELLED__");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn compress_tar_gz_cancelled_at_start_returns_cancelled() {
+        let dir = tmp_dir("tar_gz_cancel");
+        let src = dir.join("file.txt");
+        std::fs::write(&src, b"some data").unwrap();
+
+        let archive = dir.join("archive.tar.gz");
+        let result = run_compression_tar_gz(
+            &[src],
+            &archive,
+            CompressLevel::Normal,
+            noop_progress4,
+            yes_cancel,
+        );
+
+        assert_eq!(result.unwrap_err(), "__CANCELLED__");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // --- list_zip_entries ---
+
+    #[test]
+    fn list_zip_entries_returns_correct_names() {
+        let dir = tmp_dir("list_zip");
+        let src_a = dir.join("readme.txt");
+        let src_b = dir.join("data.json");
+        std::fs::write(&src_a, b"readme").unwrap();
+        std::fs::write(&src_b, b"{}").unwrap();
+
+        let archive = dir.join("listing.zip");
+        run_compression_zip(
+            &[src_a, src_b],
+            &archive,
+            CompressLevel::Fast,
+            noop_progress4,
+            no_cancel,
+        )
+        .unwrap();
+
+        let entries = list_zip_entries(&archive).unwrap();
+        let names: Vec<&str> = entries.iter().map(|e| e.path.as_str()).collect();
+        assert!(names.contains(&"readme.txt"), "expected readme.txt in {:?}", names);
+        assert!(names.contains(&"data.json"), "expected data.json in {:?}", names);
+        assert_eq!(entries.iter().filter(|e| e.is_dir).count(), 0);
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

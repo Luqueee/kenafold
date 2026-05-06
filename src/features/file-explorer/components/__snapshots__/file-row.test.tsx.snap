@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FileRow snapshots > renders file in cut state 1`] = `
+<tr
+  aria-describedby="DndDescribedBy-2"
+  aria-disabled="false"
+  aria-label="Archivo document.txt"
+  aria-roledescription="draggable"
+  aria-selected="false"
+  class="group cursor-pointer border-b border-border/30 hover:bg-muted/40 opacity-40"
+  data-path="/home/user/document.txt"
+  role="row"
+  tabindex="-1"
+>
+  <td>
+    col1
+  </td>
+  <td>
+    col2
+  </td>
+</tr>
+`;
+
+exports[`FileRow snapshots > renders file in default state 1`] = `
+<tr
+  aria-describedby="DndDescribedBy-0"
+  aria-disabled="false"
+  aria-label="Archivo document.txt"
+  aria-roledescription="draggable"
+  aria-selected="false"
+  class="group cursor-pointer border-b border-border/30 hover:bg-muted/40 "
+  data-path="/home/user/document.txt"
+  role="row"
+  tabindex="-1"
+>
+  <td>
+    col1
+  </td>
+  <td>
+    col2
+  </td>
+</tr>
+`;
+
+exports[`FileRow snapshots > renders file in selected state 1`] = `
+<tr
+  aria-describedby="DndDescribedBy-1"
+  aria-disabled="false"
+  aria-label="Archivo document.txt"
+  aria-roledescription="draggable"
+  aria-selected="true"
+  class="group cursor-pointer border-b border-border/30 bg-accent/60 "
+  data-path="/home/user/document.txt"
+  role="row"
+  tabindex="0"
+>
+  <td>
+    col1
+  </td>
+  <td>
+    col2
+  </td>
+</tr>
+`;
+
+exports[`FileRow snapshots > renders folder (drop target enabled) 1`] = `
+<tr
+  aria-describedby="DndDescribedBy-3"
+  aria-disabled="false"
+  aria-label="Carpeta Documents"
+  aria-roledescription="draggable"
+  aria-selected="false"
+  class="group cursor-pointer border-b border-border/30 hover:bg-muted/40 "
+  data-path="/home/user/Documents"
+  role="row"
+  tabindex="-1"
+>
+  <td>
+    col1
+  </td>
+  <td>
+    col2
+  </td>
+</tr>
+`;

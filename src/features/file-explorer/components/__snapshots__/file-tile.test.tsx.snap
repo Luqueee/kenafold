@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FileTile snapshots > renders file in cut state 1`] = `
+<div
+  aria-describedby="DndDescribedBy-2"
+  aria-disabled="false"
+  aria-label="Archivo photo.png"
+  aria-pressed="false"
+  aria-roledescription="draggable"
+  class="group flex cursor-pointer select-none flex-col items-center gap-2 rounded-md border border-transparent p-3 transition-colors hover:bg-muted/40 opacity-40"
+  data-path="/home/user/photo.png"
+  role="button"
+  tabindex="-1"
+>
+  <span>
+    icon
+  </span>
+  <span>
+    photo.png
+  </span>
+</div>
+`;
+
+exports[`FileTile snapshots > renders file in default state 1`] = `
+<div
+  aria-describedby="DndDescribedBy-0"
+  aria-disabled="false"
+  aria-label="Archivo photo.png"
+  aria-pressed="false"
+  aria-roledescription="draggable"
+  class="group flex cursor-pointer select-none flex-col items-center gap-2 rounded-md border border-transparent p-3 transition-colors hover:bg-muted/40 "
+  data-path="/home/user/photo.png"
+  role="button"
+  tabindex="-1"
+>
+  <span>
+    icon
+  </span>
+  <span>
+    photo.png
+  </span>
+</div>
+`;
+
+exports[`FileTile snapshots > renders file in selected state 1`] = `
+<div
+  aria-describedby="DndDescribedBy-1"
+  aria-disabled="false"
+  aria-label="Archivo photo.png"
+  aria-pressed="true"
+  aria-roledescription="draggable"
+  class="group flex cursor-pointer select-none flex-col items-center gap-2 rounded-md border border-transparent p-3 transition-colors border-border/60 bg-accent/60 "
+  data-path="/home/user/photo.png"
+  role="button"
+  tabindex="0"
+>
+  <span>
+    icon
+  </span>
+  <span>
+    photo.png
+  </span>
+</div>
+`;
+
+exports[`FileTile snapshots > renders folder (drop target enabled) 1`] = `
+<div
+  aria-describedby="DndDescribedBy-3"
+  aria-disabled="false"
+  aria-label="Carpeta Downloads"
+  aria-pressed="false"
+  aria-roledescription="draggable"
+  class="group flex cursor-pointer select-none flex-col items-center gap-2 rounded-md border border-transparent p-3 transition-colors hover:bg-muted/40 "
+  data-path="/home/user/Downloads"
+  role="button"
+  tabindex="-1"
+>
+  <span>
+    icon
+  </span>
+  <span>
+    Downloads
+  </span>
+</div>
+`;

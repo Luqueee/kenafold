@@ -55,9 +55,9 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 
 ## 🧪 Testing
 
-- [ ] **Tests Rust de archive ops** — `archive.rs` sin coverage visible.
+- [x] **Tests Rust de archive ops** — `archive.rs` sin coverage visible.
 - [x] **E2E con Playwright + Tauri** — flow completo: navegar, copiar, extraer.
-- [ ] **Snapshot tests de pane** — list/grid view rendering.
+- [x] **Snapshot tests de pane** — list/grid view rendering.
 
 ---
 
