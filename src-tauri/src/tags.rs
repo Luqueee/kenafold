@@ -1,5 +1,4 @@
 use rusqlite::{params, Connection, Result as SqlResult};
-use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
@@ -23,9 +22,6 @@ impl TagsDb {
         Ok(TagsDb(Mutex::new(conn)))
     }
 }
-
-#[derive(Serialize)]
-pub struct TagsMap(HashMap<String, Vec<String>>);
 
 #[tauri::command]
 pub fn tags_get(path: String, db: State<TagsDb>) -> Result<Vec<String>, String> {

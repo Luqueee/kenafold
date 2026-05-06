@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useEffect } from "react"
 import { useHotkey, type UseHotkeyOptions } from "@tanstack/react-hotkeys"
 import { useAction } from "@/features/hotkeys/bindings"
@@ -103,6 +104,7 @@ export function useExplorerHotkeys({
   moveKeyboardHead,
   getGridColumns,
 }: UseExplorerHotkeysOptions) {
+  "use no memo"
   // Local helper — valid because it's always called unconditionally at hook top-level
   function useActiveAction(id: HotkeyActionId, fn: (e: KeyboardEvent) => void, opts?: UseHotkeyOptions) {
     useAction(id, fn, { ...opts, enabled: active && (opts?.enabled ?? true) })
@@ -114,6 +116,7 @@ export function useExplorerHotkeys({
   }
 
   useHotkey("Escape", () => {
+    if (quickLookEntry) return closeQuickLook()
     if (inlineMode) return inline.cancelInline()
     if (document.activeElement === filterRef.current) {
       setFilterQuery("")
