@@ -84,6 +84,7 @@ export function VideoPlayer({ src, compact }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const volTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -104,7 +105,12 @@ export function VideoPlayer({ src, compact }: Props) {
     if (playing) scheduleHide()
   }, [playing, scheduleHide])
 
-  useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current) }, [])
+  useEffect(() => () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    if (volTimer.current) clearTimeout(volTimer.current)
+    const v = videoRef.current
+    if (v) { v.pause(); v.src = ""; v.load() }
+  }, [])
 
   // Actions
   const togglePlay = useCallback(() => {
@@ -126,7 +132,8 @@ export function VideoPlayer({ src, compact }: Props) {
     v.volume = val
     v.muted = val === 0
     setShowVolumePct(true)
-    setTimeout(() => setShowVolumePct(false), 900)
+    if (volTimer.current) clearTimeout(volTimer.current)
+    volTimer.current = setTimeout(() => setShowVolumePct(false), 900)
   }, [])
 
   const toggleMute = useCallback(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronRight, File, FileQuestion, Folder, Loader2 } from "lucide-react"
 import { convertFileSrc } from "@tauri-apps/api/core"
 import { fsGateway, type ArchiveEntry, type Preview } from "@/features/filesystem/infra/fs.gateway"
@@ -108,13 +108,7 @@ function PreviewKind({
     case "video":
       return <VideoPlayer src={assetSrc} compact={compact} />
     case "pdf":
-      return (
-        <iframe
-          src={`${assetSrc}#toolbar=1&view=FitH`}
-          className={compact ? "h-full w-full" : "h-[80vh] w-full"}
-          title="PDF"
-        />
-      )
+      return <PdfPreview src={assetSrc} compact={compact} />
     case "text":
       return (
         <pre
@@ -141,6 +135,23 @@ function PreviewKind({
         </div>
       )
   }
+}
+
+function PdfPreview({ src, compact }: { src: string; compact: boolean }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  useEffect(() => {
+    return () => {
+      if (iframeRef.current) iframeRef.current.src = "about:blank"
+    }
+  }, [])
+  return (
+    <iframe
+      ref={iframeRef}
+      src={`${src}#toolbar=1&view=FitH`}
+      className={compact ? "h-full w-full" : "h-[80vh] w-full"}
+      title="PDF"
+    />
+  )
 }
 
 // ---------------------------------------------------------------------------
