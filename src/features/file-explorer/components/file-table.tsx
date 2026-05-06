@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatSize, formatDate } from "@/shared/lib/format"
 import { useFileExplorer } from "../state/explorer-context"
+import { useTags } from "@/features/tags/api/tags-context"
+import { TagDot } from "@/features/tags/components/tag-dot"
 import { FileIcon } from "./file-icon"
 import { FileRow } from "./file-row"
 import { FileGrid } from "./file-grid"
@@ -121,6 +123,7 @@ function SortHeader({
 }
 
 function VirtualTable() {
+  const { getTagsForPath } = useTags()
   const {
     filteredEntries,
     isSelected,
@@ -324,7 +327,14 @@ function VirtualTable() {
                     autoSelect
                   />
                 ) : (
-                  <span className="truncate">{entry.name}</span>
+                  <>
+                    <span className="truncate">{entry.name}</span>
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {getTagsForPath(entry.path).map((t) => (
+                        <TagDot key={t} tagId={t} />
+                      ))}
+                    </span>
+                  </>
                 )}
               </td>
               <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">

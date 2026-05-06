@@ -12,12 +12,14 @@ import {
   FolderPlus,
   Pencil,
   Play,
+  Tag,
   Trash2,
   Archive,
   PackageOpen,
 } from "lucide-react"
 import { useFileExplorer } from "../state/explorer-context"
 import { isShellScript, isArchive } from "@/features/filesystem/domain/file-entry"
+import { TagPickerPortal } from "@/features/tags/components/tag-picker"
 
 interface MenuItemProps {
   icon?: React.ReactNode
@@ -165,6 +167,7 @@ function ContextMenuBody({
   // Measure the menu after first render and reposition if it overflows the viewport.
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [pos, setPos] = useState({ x: contextMenu.x, y: contextMenu.y })
+  const [tagPickerPos, setTagPickerPos] = useState<{ x: number; y: number } | null>(null)
   useLayoutEffect(() => {
     const el = menuRef.current
     if (!el) return
@@ -309,6 +312,12 @@ function ContextMenuBody({
             )}
             <MenuDivider />
             <MenuItem
+              icon={<Tag className="h-3.5 w-3.5" />}
+              label="Etiquetar"
+              onClick={() => setTagPickerPos({ x: pos.x + 208, y: pos.y })}
+            />
+            <MenuDivider />
+            <MenuItem
               icon={<Trash2 className="h-3.5 w-3.5" />}
               label="Eliminar"
               shortcut="⌦"
@@ -351,6 +360,14 @@ function ContextMenuBody({
           </>
         )}
       </div>
+      {tagPickerPos && (
+        <TagPickerPortal
+          paths={targetPaths}
+          x={tagPickerPos.x}
+          y={tagPickerPos.y}
+          onClose={() => { setTagPickerPos(null); closeContextMenu() }}
+        />
+      )}
     </>,
     document.body
   )

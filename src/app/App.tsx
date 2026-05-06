@@ -207,6 +207,7 @@ export default function App() {
                   clipboardApi={clipboardApi}
                   headerContainer={headerEl}
                   filterContainer={filterEl}
+                  tagFilter={p.id === activeId ? tagFilter : null}
                 />
               ))}
             </SidebarInset>

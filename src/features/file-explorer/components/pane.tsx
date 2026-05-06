@@ -37,6 +37,7 @@ interface Props {
   clipboardApi: ReturnType<typeof useClipboard>
   headerContainer: HTMLElement | null
   filterContainer: HTMLElement | null
+  tagFilter: string | null
 }
 
 export function Pane({
@@ -56,6 +57,7 @@ export function Pane({
   clipboardApi,
   headerContainer,
   filterContainer,
+  tagFilter,
 }: Props) {
   const { current, navigate, back, forward, canBack, canForward } = useHistory(initialPath)
 
@@ -85,6 +87,7 @@ export function Pane({
       onOpenSettings={onOpenSettings}
       active={isActive}
       clipboardApi={clipboardApi}
+      tagFilter={tagFilter}
     >
       {headerContainer && isActive && createPortal(
         <div className="min-w-0 flex-1 overflow-hidden"><Toolbar /></div>,

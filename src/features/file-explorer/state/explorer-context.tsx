@@ -41,6 +41,7 @@ import { useDragDrop } from "../hooks/use-drag-drop"
 import { useSelection, modeFromEvent } from "../hooks/use-selection"
 import { useUndoStack } from "@/features/filesystem/api/use-undo-stack"
 import { describeUndoOp } from "@/features/filesystem/domain/undo-op"
+import { tagsGateway } from "@/features/tags/infra/tags.gateway"
 
 export type { InlineMode, ViewMode }
 
@@ -143,6 +144,8 @@ interface Value {
   canUndo: boolean
   undoLabel: string | null
   undo: () => Promise<void>
+
+  tagFilter: string | null
 }
 
 const Ctx = createContext<Value | null>(null)
@@ -167,6 +170,7 @@ interface ProviderProps {
   onOpenSettings: () => void
   active?: boolean
   clipboardApi?: ClipboardApi
+  tagFilter?: string | null
   children: ReactNode
 }
 
@@ -184,8 +188,20 @@ export function FileExplorerProvider({
   onOpenSettings,
   active = true,
   clipboardApi,
+  tagFilter = null,
   children,
 }: ProviderProps) {
+  const [taggedEntries, setTaggedEntries] = useState<FileEntry[]>([])
+  useEffect(() => {
+    if (!tagFilter) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setTaggedEntries([])
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return
+    }
+    tagsGateway.getEntriesByTag(tagFilter).then(setTaggedEntries).catch(() => setTaggedEntries([]))
+  }, [tagFilter])
+
   const { sortBy, sortDir, setSortBy, setSortDir } = useSortPref()
   const { showHidden, setShowHidden } = useShowHidden()
   const {
@@ -238,10 +254,12 @@ export function FileExplorerProvider({
   )
 
   const filteredEntries = useMemo(() => {
+    if (tagFilter) return taggedEntries
     const q = filterQuery.trim().toLowerCase()
-    if (!q) return visibleEntries
-    return visibleEntries.filter((e) => e.name.toLowerCase().includes(q))
-  }, [visibleEntries, filterQuery])
+    return q
+      ? visibleEntries.filter((e) => e.name.toLowerCase().includes(q))
+      : visibleEntries
+  }, [visibleEntries, filterQuery, tagFilter, taggedEntries])
 
   // Destructured to keep effect deps as primitives (pendingSelect) and a stable
   // callback (clearPendingSelect), avoiding the whole `inline` object as a dep.
@@ -667,6 +685,7 @@ export function FileExplorerProvider({
     canUndo: undoStack.canUndo,
     undoLabel: undoStack.peek ? describeUndoOp(undoStack.peek) : null,
     undo,
+    tagFilter,
   }), [
     path, onNavigate, onBack, onForward, canBack, canForward,
     onOpenSearch, onAddFavorite, isFavorite,
@@ -686,6 +705,7 @@ export function FileExplorerProvider({
     showHidden, setShowHidden,
     quickLookEntry, openQuickLook, closeQuickLook,
     undoStack.canUndo, undoStack.peek, undo,
+    tagFilter,
   ])
 
   return (

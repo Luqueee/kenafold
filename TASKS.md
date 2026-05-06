@@ -20,7 +20,6 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 - [ ] **Tree view en sidebar** — expand/collapse de carpetas favoritas sin abrir pane.
 - [ ] **Comparador de carpetas** — diff dos directorios (size, mtime, hash). Útil para sync manual.
 - [ ] **Hash/checksum panel** — MD5/SHA256/SHA1 al seleccionar archivo. Copy-to-clipboard.
-- [ ] **Dark mode toggle real** — persistir en settings, respetar `prefers-color-scheme`.
 - [ ] **Trash/papelera nativa** — usar crate `trash` en Rust. Restore desde UI.
 - [ ] **Mass tagging por extensión** — seleccionar todos `.pdf` en árbol y aplicar tag.
 - [ ] **Preview de código con syntax highlight** — shiki para `.ts/.rs/.py/.md`.

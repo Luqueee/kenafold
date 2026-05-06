@@ -105,22 +105,22 @@ export function AppSidebar({
             <SidebarGroupLabel>Etiquetas</SidebarGroupLabel>
             <SidebarMenu>
               {usedTags.map((tag) => (
-                <SidebarMenuItem key={tag.id}>
+                <SidebarMenuItem key={tag.id} className="group/tag">
                   <SidebarMenuButton
                     isActive={tagFilter === tag.id}
                     onClick={() => onTagFilter(tag.id)}
                   >
                     <Tag className="h-4 w-4 shrink-0" style={{ color: tag.color }} />
                     <span className="flex-1 truncate">{tag.name}</span>
-                    {tagFilter === tag.id && (
-                      <SidebarMenuAction
-                        onClick={(e) => { e.stopPropagation(); onTagFilter(null) }}
-                        title="Quitar filtro"
-                      >
-                        <X className="h-3 w-3" />
-                      </SidebarMenuAction>
-                    )}
                   </SidebarMenuButton>
+                  {tagFilter === tag.id && (
+                    <SidebarMenuAction
+                      onClick={(e) => { e.stopPropagation(); onTagFilter(null) }}
+                      title="Quitar filtro"
+                    >
+                      <X className="h-3 w-3" />
+                    </SidebarMenuAction>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

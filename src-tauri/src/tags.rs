@@ -3,7 +3,10 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::SystemTime;
 use tauri::State;
+
+use crate::fs::FileEntry;
 
 pub struct TagsDb(pub Mutex<Connection>);
 
@@ -75,6 +78,39 @@ pub fn tags_get_all(db: State<TagsDb>) -> Result<HashMap<String, Vec<String>>, S
         map.entry(path).or_default().push(tag_id);
     }
     Ok(map)
+}
+
+#[tauri::command]
+pub fn tags_get_entries_by_tag(tag_id: String, db: State<TagsDb>) -> Result<Vec<FileEntry>, String> {
+    let paths = tags_get_by_tag(tag_id, db)?;
+    let mut entries = Vec::new();
+    for path_str in paths {
+        let p = std::path::Path::new(&path_str);
+        if let Ok(meta) = std::fs::metadata(p) {
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            let extension = p
+                .extension()
+                .map(|e| e.to_string_lossy().into_owned());
+            let modified = meta
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            entries.push(FileEntry {
+                name,
+                path: path_str,
+                is_dir: meta.is_dir(),
+                size: meta.len(),
+                modified,
+                extension,
+            });
+        }
+    }
+    Ok(entries)
 }
 
 #[tauri::command]

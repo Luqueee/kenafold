@@ -15,6 +15,7 @@ mod smb;
 mod system;
 mod tags;
 mod terminal;
+mod watcher;
 
 fn external_navigation_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::<R>::new("external-navigation")
@@ -96,12 +97,14 @@ pub fn run() {
             let tags_db_path = app
                 .path()
                 .app_data_dir()
-                .map(|d| d.join("tags.db"))
+                .map(|d| {
+                    let _ = std::fs::create_dir_all(&d);
+                    d.join("tags.db")
+                })
                 .unwrap_or_else(|_| std::path::PathBuf::from("tags.db"));
-            match tags::TagsDb::open(&tags_db_path) {
-                Ok(db) => { app.manage(db); }
-                Err(e) => log::error!("Failed to open tags DB: {}", e),
-            }
+            let tags_db = tags::TagsDb::open(&tags_db_path)
+                .expect("failed to open tags DB");
+            app.manage(tags_db);
 
             #[cfg(target_os = "macos")]
             {
@@ -125,6 +128,7 @@ pub fn run() {
         .manage(archive::CancelMap::new())
         .manage(search::SearchIndex::default())
         .manage(system::SysState::default())
+        .manage(watcher::WatcherState::default())
         .invoke_handler(tauri::generate_handler![
             fs::list_directory,
             fs::get_home_dir,
@@ -162,7 +166,11 @@ pub fn run() {
             tags::tags_set,
             tags::tags_remove,
             tags::tags_get_all,
-            tags::tags_get_by_tag
+            tags::tags_get_by_tag,
+            tags::tags_get_entries_by_tag,
+            watcher::watch_directory,
+            watcher::unwatch_directory,
+            watcher::current_watch_path
         ])
         .on_page_load(|webview, payload| {
             if webview.label() == "main" && matches!(payload.event(), PageLoadEvent::Finished) {
