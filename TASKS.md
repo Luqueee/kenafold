@@ -45,7 +45,7 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 ## ⚡ UX / Pulido
 
 - [ ] **Multi-tab por pane** — chrome-style tabs dentro de cada pane.
-- [ ] **Quick filter inline** — type-ahead en pane sin abrir search palette.
+- [x] **Quick filter inline** — type-ahead en pane sin abrir search palette.
 - [x] **Drag preview con count** — badge con cantidad al arrastrar N archivos.
 - [x] **Atajos visibles en menús** — mostrar binding de hotkey al lado de cada acción de context menu.
 - [ ] **Onboarding tour** — primera vez: highlight de features clave.

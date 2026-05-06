@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useHotkey, type UseHotkeyOptions } from "@tanstack/react-hotkeys"
 import { useAction } from "@/features/hotkeys/bindings"
 import type { HotkeyActionId } from "@/features/hotkeys/registry"
@@ -271,4 +272,19 @@ export function useExplorerHotkeys({
   useActiveAction("nav.enter", () => {
     if (selEntry?.is_dir) onNavigate(selEntry.path)
   }, { enabled: navEnabled && viewMode !== "grid" && !!selEntry?.is_dir })
+
+  useEffect(() => {
+    if (!active) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (inlineMode) return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.key.length !== 1) return
+      if (document.activeElement === filterRef.current) return
+      const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === "input" || tag === "textarea") return
+      filterRef.current?.focus()
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true })
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
+  }, [active, inlineMode, filterRef])
 }
