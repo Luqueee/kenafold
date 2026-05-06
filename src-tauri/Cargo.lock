@@ -3,6 +3,35 @@
 version = 4
 
 [[package]]
+name = "Kenafold"
+version = "0.1.0"
+dependencies = [
+ "bzip2 0.4.4",
+ "flate2",
+ "grep",
+ "ignore",
+ "keyring",
+ "log",
+ "notify",
+ "notify-debouncer-mini",
+ "nucleo-matcher",
+ "objc2",
+ "objc2-app-kit",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-opener",
+ "trash",
+ "urlencoding",
+ "zip",
+ "zstd",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4248,35 +4277,6 @@ dependencies = [
  "syn 2.0.117",
  "tauri-codegen",
  "tauri-utils",
-]
-
-[[package]]
-name = "tauri-native"
-version = "0.1.0"
-dependencies = [
- "bzip2 0.4.4",
- "flate2",
- "grep",
- "ignore",
- "keyring",
- "log",
- "notify",
- "notify-debouncer-mini",
- "nucleo-matcher",
- "objc2",
- "objc2-app-kit",
- "serde",
- "serde_json",
- "sysinfo",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-opener",
- "trash",
- "urlencoding",
- "zip",
- "zstd",
 ]
 
 [[package]]

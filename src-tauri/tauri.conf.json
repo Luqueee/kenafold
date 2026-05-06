@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Arbor",
+  "productName": "Kenafold",
   "version": "0.1.0",
-  "identifier": "com.luqueee.arbor",
+  "identifier": "com.luqueee.Kenafold",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Mutex;
 
-const KEYCHAIN_SERVICE: &str = "arbor.smb";
+const KEYCHAIN_SERVICE: &str = "Kenafold.smb";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SmbShare {

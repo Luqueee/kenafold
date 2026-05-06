@@ -209,6 +209,8 @@ export function FileExplorerProvider({
   // Refs let callbacks always see latest data without being in deps → stable references.
   const entriesRef = useRef<readonly FileEntry[]>(entries)
   const selectedPathsRef = useRef<ReadonlySet<string>>(selection.selectedPaths)
+  const keyboardHeadRef = useRef<string | null>(null)
+  const keyboardAnchorRef = useRef<string | null>(null)
 
   const dnd = useDragDrop(ops, selectedPathsRef, entriesRef)
 
@@ -474,49 +476,80 @@ export function FileExplorerProvider({
     selection.selectAll(filteredEntries.map((en) => en.path))
   }, { enabled: navEnabled, ignoreInputs: true })
 
+  const getGridColumns = () => {
+    const innerWidth = (tableRef.current?.clientWidth ?? 0) - 24
+    return Math.max(1, Math.floor((innerWidth + 8) / 118))
+  }
+
+  const moveKeyboardHead = (step: number) => {
+    if (filteredEntries.length === 0) return
+    if (!keyboardAnchorRef.current) keyboardAnchorRef.current = selected
+    const anchor = keyboardAnchorRef.current
+    const anchorIdx = anchor ? filteredEntries.findIndex((en) => en.path === anchor) : 0
+    const head = keyboardHeadRef.current ?? anchor
+    const headIdx = head ? filteredEntries.findIndex((en) => en.path === head) : anchorIdx
+    const newHeadIdx = Math.max(0, Math.min(filteredEntries.length - 1, headIdx + step))
+    if (newHeadIdx === headIdx) return
+    const newHead = filteredEntries[newHeadIdx]
+    const extending = Math.abs(newHeadIdx - anchorIdx) > Math.abs(headIdx - anchorIdx)
+    if (extending) {
+      selection.add(newHead.path)
+      keyboardHeadRef.current = newHead.path
+    } else {
+      const currentHead = filteredEntries[headIdx]
+      if (currentHead && currentHead.path !== anchor) selection.remove(currentHead.path)
+      keyboardHeadRef.current = newHead.path === anchor ? null : newHead.path
+    }
+    scrollToSelected(newHead.path)
+  }
+
+  const resetKeyboardRefs = () => {
+    keyboardHeadRef.current = null
+    keyboardAnchorRef.current = null
+  }
+
   useActiveAction("selection.down", () => {
     if (filteredEntries.length === 0) return
-    const idx = selected
-      ? filteredEntries.findIndex((en) => en.path === selected)
-      : -1
-    const next = filteredEntries[Math.min(idx + 1, filteredEntries.length - 1)]
-    if (next) {
-      setSelected(next.path)
-      scrollToSelected(next.path)
-    }
+    resetKeyboardRefs()
+    const step = viewMode === "grid" ? getGridColumns() : 1
+    const idx = selected ? filteredEntries.findIndex((en) => en.path === selected) : -1
+    const next = filteredEntries[Math.min(idx + step, filteredEntries.length - 1)]
+    if (next) { setSelected(next.path); scrollToSelected(next.path) }
   }, { enabled: navEnabled })
 
   useActiveAction("selection.up", () => {
     if (filteredEntries.length === 0) return
-    const idx = selected
-      ? filteredEntries.findIndex((en) => en.path === selected)
-      : 0
-    const prev = filteredEntries[Math.max(idx - 1, 0)]
-    if (prev) {
-      setSelected(prev.path)
-      scrollToSelected(prev.path)
-    }
+    resetKeyboardRefs()
+    const step = viewMode === "grid" ? getGridColumns() : 1
+    const idx = selected ? filteredEntries.findIndex((en) => en.path === selected) : 0
+    const prev = filteredEntries[Math.max(idx - step, 0)]
+    if (prev) { setSelected(prev.path); scrollToSelected(prev.path) }
   }, { enabled: navEnabled })
 
-  useHotkey("Meta+ArrowDown", () => {
+  // Grid-only: left/right single-item navigation (no Meta)
+  useHotkey("ArrowLeft", () => {
     if (filteredEntries.length === 0) return
-    const idx = selected ? filteredEntries.findIndex((en) => en.path === selected) : -1
-    const next = filteredEntries[Math.min(idx + 1, filteredEntries.length - 1)]
-    if (next && next.path !== selected) {
-      selection.add(next.path)
-      scrollToSelected(next.path)
-    }
-  }, { enabled: active && navEnabled })
-
-  useHotkey("Meta+ArrowUp", () => {
-    if (filteredEntries.length === 0) return
+    resetKeyboardRefs()
     const idx = selected ? filteredEntries.findIndex((en) => en.path === selected) : 0
     const prev = filteredEntries[Math.max(idx - 1, 0)]
-    if (prev && prev.path !== selected) {
-      selection.add(prev.path)
-      scrollToSelected(prev.path)
-    }
-  }, { enabled: active && navEnabled })
+    if (prev && prev.path !== selected) { setSelected(prev.path); scrollToSelected(prev.path) }
+  }, { enabled: active && navEnabled && viewMode === "grid" })
+
+  useHotkey("ArrowRight", () => {
+    if (filteredEntries.length === 0) return
+    resetKeyboardRefs()
+    const idx = selected ? filteredEntries.findIndex((en) => en.path === selected) : -1
+    const next = filteredEntries[Math.min(idx + 1, filteredEntries.length - 1)]
+    if (next && next.path !== selected) { setSelected(next.path); scrollToSelected(next.path) }
+  }, { enabled: active && navEnabled && viewMode === "grid" })
+
+  useHotkey("Meta+ArrowDown", () => {
+    moveKeyboardHead(1)
+  }, { enabled: active && navEnabled && viewMode !== "grid" })
+
+  useHotkey("Meta+ArrowUp", () => {
+    moveKeyboardHead(-1)
+  }, { enabled: active && navEnabled && viewMode !== "grid" })
 
   useActiveAction("nav.activate", () => {
     if (selEntry) handleActivate(selEntry)
@@ -525,11 +558,11 @@ export function FileExplorerProvider({
   useActiveAction("nav.up", () => {
     const par = parentPath(path)
     if (par) onNavigate(par)
-  }, { enabled: navEnabled })
+  }, { enabled: navEnabled && viewMode !== "grid" })
 
   useActiveAction("nav.enter", () => {
     if (selEntry?.is_dir) onNavigate(selEntry.path)
-  }, { enabled: navEnabled && !!selEntry?.is_dir })
+  }, { enabled: navEnabled && viewMode !== "grid" && !!selEntry?.is_dir })
 
   const segments = useMemo(() => pathSegments(path), [path])
   const parent = useMemo(() => parentPath(path), [path])

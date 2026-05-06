@@ -58,7 +58,7 @@ pub fn run() {
         .plugin(external_navigation_plugin())
         .setup(|app| {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("Arbor")
+                .title("Kenafold")
                 .inner_size(1400.0, 700.0)
                 .center()
                 .visible(false)
