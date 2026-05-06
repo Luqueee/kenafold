@@ -16,7 +16,7 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 ## 🟣 Features
 
 - [x] **Tags/Labels de archivos** — color-coded, persistidos en SQLite local. Filtrable desde sidebar.
-- [ ] **Bulk rename con regex/patrón** — `{n}`, `{ext}`, `{date}` tokens. Preview antes de aplicar.
+- [x] **Bulk rename con regex/patrón** — `{n}`, `{ext}`, `{date}` tokens. Preview antes de aplicar.
 - [ ] **Tree view en sidebar** — expand/collapse de carpetas favoritas sin abrir pane.
 - [ ] **Comparador de carpetas** — diff dos directorios (size, mtime, hash). Útil para sync manual.
 - [ ] **Hash/checksum panel** — MD5/SHA256/SHA1 al seleccionar archivo. Copy-to-clipboard.

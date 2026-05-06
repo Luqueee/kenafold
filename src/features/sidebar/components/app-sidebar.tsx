@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useState, useCallback } from "react"
 import {
   Home,
   Monitor,
@@ -8,6 +9,9 @@ import {
   Star,
   Tag,
   X,
+  ChevronRight,
+  Folder,
+  Loader2,
 } from "lucide-react"
 import {
   Sidebar,
@@ -19,8 +23,128 @@ import {
   SidebarMenuAction,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+// SidebarMenuButton/SidebarMenuAction used by tags and SMB sections below
 import { SmbSection } from "@/features/smb/components/smb-section"
 import { useTags } from "@/features/tags/api/tags-context"
+import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
+import type { FileEntry } from "@/features/filesystem/domain/file-entry"
+import { cn } from "@/lib/utils"
+
+interface TreeNodeProps {
+  path: string
+  label: string
+  icon?: React.ReactNode
+  depth: number
+  currentPath: string
+  onNavigate: (path: string) => void
+  onRemove?: () => void
+}
+
+function FavoriteTreeNode({
+  path,
+  label,
+  icon,
+  depth,
+  currentPath,
+  onNavigate,
+  onRemove,
+}: TreeNodeProps) {
+  const [open, setOpen] = useState(false)
+  const [children, setChildren] = useState<FileEntry[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const toggle = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!open && children === null) {
+        setLoading(true)
+        try {
+          const page = await fsGateway.list(path, { sortBy: "name", sortDir: "asc" })
+          setChildren(page.entries.filter((e) => e.is_dir))
+        } catch {
+          setChildren([])
+        } finally {
+          setLoading(false)
+        }
+      }
+      setOpen((o) => !o)
+    },
+    [open, children, path]
+  )
+
+  const isActive = currentPath === path
+  const hasLoadedChildren = children !== null
+  const hasChildren = !hasLoadedChildren || children.length > 0
+
+  return (
+    <div>
+      <div
+        className={cn(
+          "group/node relative flex h-8 cursor-pointer items-center gap-1 rounded-md text-sm",
+          "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+        )}
+        style={{ paddingLeft: `${8 + depth * 14}px`, paddingRight: "8px" }}
+        onClick={() => onNavigate(path)}
+      >
+        <button
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10"
+          onClick={toggle}
+          title={open ? "Colapsar" : "Expandir"}
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : hasChildren ? (
+            <ChevronRight
+              className={cn("h-3 w-3 transition-transform duration-150", open && "rotate-90")}
+            />
+          ) : (
+            <span className="h-3 w-3" />
+          )}
+        </button>
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
+          {icon ?? <Star className="h-3.5 w-3.5" />}
+        </span>
+        <span className="flex-1 truncate">{label}</span>
+        {onRemove && (
+          <button
+            className="hidden h-4 w-4 shrink-0 items-center justify-center rounded hover:text-destructive group-hover/node:flex"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRemove()
+            }}
+            title="Quitar de favoritos"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      {open && children && children.length > 0 && (
+        <div>
+          {children.map((child) => (
+            <FavoriteTreeNode
+              key={child.path}
+              path={child.path}
+              label={child.name}
+              icon={<Folder className="h-3.5 w-3.5" />}
+              depth={depth + 1}
+              currentPath={currentPath}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
+      {open && children && children.length === 0 && (
+        <div
+          className="py-1 text-xs text-muted-foreground"
+          style={{ paddingLeft: `${8 + (depth + 1) * 14 + 20}px` }}
+        >
+          Sin subcarpetas
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface Props extends React.ComponentProps<typeof Sidebar> {
   homeDir: string | null
@@ -62,36 +186,28 @@ export function AppSidebar({
           <SidebarMenu>
             {defaultBookmarks.map((item) => (
               <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton
-                  isActive={currentPath === item.path}
-                  onClick={() => onNavigate(item.path)}
-                >
-                  <item.icon />
-                  {item.label}
-                </SidebarMenuButton>
+                <FavoriteTreeNode
+                  path={item.path}
+                  label={item.label}
+                  icon={<item.icon className="h-3.5 w-3.5" />}
+                  depth={0}
+                  currentPath={currentPath}
+                  onNavigate={onNavigate}
+                />
               </SidebarMenuItem>
             ))}
             {favorites.map((favPath) => {
               const label = favPath.split("/").filter(Boolean).at(-1) ?? favPath
               return (
-                <SidebarMenuItem key={favPath} className="group/fav">
-                  <SidebarMenuButton
-                    isActive={currentPath === favPath}
-                    onClick={() => onNavigate(favPath)}
-                  >
-                    <Star className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 truncate">{label}</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuAction
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onRemoveFavorite(favPath)
-                    }}
-                    title="Quitar de favoritos"
-                    className="hidden group-hover/fav:flex"
-                  >
-                    <X className="h-3 w-3" />
-                  </SidebarMenuAction>
+                <SidebarMenuItem key={favPath}>
+                  <FavoriteTreeNode
+                    path={favPath}
+                    label={label}
+                    depth={0}
+                    currentPath={currentPath}
+                    onNavigate={onNavigate}
+                    onRemove={() => onRemoveFavorite(favPath)}
+                  />
                 </SidebarMenuItem>
               )
             })}
