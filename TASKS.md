@@ -21,7 +21,7 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 - [x] **Comparador de carpetas** — diff dos directorios (size, mtime, hash). Útil para sync manual.
 - [x] **Hash/checksum panel** — MD5/SHA256/SHA1 al seleccionar archivo. Copy-to-clipboard.
 - [x] **Trash/papelera nativa** — usar crate `trash` en Rust. Restore desde UI.
-- [ ] **Mass tagging por extensión** — seleccionar todos `.pdf` en árbol y aplicar tag.
+- [x] **Mass tagging por extensión** — seleccionar todos `.pdf` en árbol y aplicar tag.
 - [x] **Preview de código con syntax highlight** — shiki para `.ts/.rs/.py/.md`.
 - [ ] **Sesiones persistidas** — restaurar paneles abiertos al reabrir app.
 - [ ] **Comandos personalizados** — user define shell command en settings, aparece en context menu (ej. "Open in iTerm").

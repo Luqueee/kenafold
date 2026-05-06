@@ -271,11 +271,19 @@ function ContextMenuBody({
         ? [entry.path]
         : []
   const targetEntries = entries.filter((e) => targetPaths.includes(e.path))
+  const sameExtPaths =
+    entry && entry.extension
+      ? entries.filter((e) => !e.is_dir && e.extension === entry.extension).map((e) => e.path)
+      : []
 
   // Measure the menu after first render and reposition if it overflows the viewport.
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [pos, setPos] = useState({ x: contextMenu.x, y: contextMenu.y })
   const [tagPickerPos, setTagPickerPos] = useState<{
+    x: number
+    y: number
+  } | null>(null)
+  const [massTagPos, setMassTagPos] = useState<{
     x: number
     y: number
   } | null>(null)
@@ -493,6 +501,32 @@ function ContextMenuBody({
               <span className="flex-1">Etiquetar</span>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
+            {sameExtPaths.length > 1 && (
+              <button
+                role="menuitem"
+                onClick={(e) => {
+                  const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
+                  const TAG_PICKER_W = 130
+                  const TAG_PICKER_H = 290
+                  const spaceRight = window.innerWidth - rect.right
+                  const x = spaceRight >= TAG_PICKER_W ? rect.right + 5 : rect.left - TAG_PICKER_W - 5
+                  const y =
+                    rect.top + TAG_PICKER_H > window.innerHeight - 8
+                      ? Math.max(8, window.innerHeight - 8 - TAG_PICKER_H)
+                      : rect.top
+                  setMassTagPos(massTagPos ? null : { x, y })
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm hover:bg-accent"
+              >
+                <span className="flex h-4 w-4 items-center justify-center text-muted-foreground">
+                  <Tag className="h-3.5 w-3.5" />
+                </span>
+                <span className="flex-1">
+                  Etiquetar todos los .{entry?.extension} ({sameExtPaths.length})
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
             <MenuDivider />
             <MenuItem
               icon={<Trash2 className="h-3.5 w-3.5" />}
@@ -543,6 +577,14 @@ function ContextMenuBody({
           x={tagPickerPos.x}
           y={tagPickerPos.y}
           onClose={() => setTagPickerPos(null)}
+        />
+      )}
+      {massTagPos && (
+        <TagPickerPortal
+          paths={sameExtPaths}
+          x={massTagPos.x}
+          y={massTagPos.y}
+          onClose={() => setMassTagPos(null)}
         />
       )}
       {compressMenuPos && (
