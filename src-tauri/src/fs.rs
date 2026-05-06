@@ -327,6 +327,97 @@ pub fn rename_and_list(
     list_directory(parent_str, options)
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrashEntry {
+    pub name: String,
+    pub is_dir: bool,
+    pub size: u64,
+    pub modified: u64,
+}
+
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    std::process::Command::new("open")
+        .arg(&url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+fn trash_dir() -> Result<std::path::PathBuf, String> {
+    let home = std::env::var("HOME").map_err(|_| "No se pudo obtener HOME".to_string())?;
+    Ok(std::path::PathBuf::from(home).join(".Trash"))
+}
+
+#[tauri::command]
+pub fn list_trash() -> Result<Vec<TrashEntry>, String> {
+    let dir = trash_dir()?;
+    let mut entries = Vec::new();
+    for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+        let name = entry.file_name().into_string().unwrap_or_default();
+        if name.starts_with('.') {
+            continue;
+        }
+        let Ok(meta) = entry.metadata() else { continue };
+        let modified = meta
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        entries.push(TrashEntry {
+            name,
+            is_dir: meta.is_dir(),
+            size: if meta.is_dir() { 0 } else { meta.len() },
+            modified,
+        });
+    }
+    entries.sort_by(|a, b| b.modified.cmp(&a.modified));
+    Ok(entries)
+}
+
+#[tauri::command]
+pub fn delete_from_trash(name: String) -> Result<(), String> {
+    let path = trash_dir()?.join(&name);
+    if !path.starts_with(trash_dir()?) {
+        return Err("Ruta inválida".to_string());
+    }
+    if path.is_dir() {
+        std::fs::remove_dir_all(&path).map_err(|e| e.to_string())
+    } else {
+        std::fs::remove_file(&path).map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+pub fn restore_from_trash(name: String, dest_dir: String) -> Result<(), String> {
+    let src = trash_dir()?.join(&name);
+    if !src.starts_with(trash_dir()?) {
+        return Err("Ruta inválida".to_string());
+    }
+    let dest = Path::new(&dest_dir).join(&name);
+    std::fs::rename(&src, &dest).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn empty_trash() -> Result<(), String> {
+    let dir = trash_dir()?;
+    for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+        let name = entry.file_name().into_string().unwrap_or_default();
+        if name.starts_with('.') {
+            continue;
+        }
+        let path = entry.path();
+        if path.is_dir() {
+            std::fs::remove_dir_all(&path).ok();
+        } else {
+            std::fs::remove_file(&path).ok();
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn delete_entry(path: String) -> Result<(), String> {
     let p = Path::new(&path);

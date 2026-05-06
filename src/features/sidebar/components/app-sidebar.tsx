@@ -8,6 +8,7 @@ import {
   HardDrive,
   Star,
   Tag,
+  Trash2,
   X,
   ChevronRight,
   Folder,
@@ -154,6 +155,7 @@ interface Props extends React.ComponentProps<typeof Sidebar> {
   onRemoveFavorite: (path: string) => void
   tagFilter: string | null
   onTagFilter: (tagId: string | null) => void
+  onOpenTrash: () => void
 }
 
 export function AppSidebar({
@@ -164,6 +166,7 @@ export function AppSidebar({
   onRemoveFavorite,
   tagFilter,
   onTagFilter,
+  onOpenTrash,
   ...props
 }: Props) {
   const { getUsedTags } = useTags()
@@ -253,6 +256,12 @@ export function AppSidebar({
               >
                 <HardDrive />
                 Raíz del sistema
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={onOpenTrash}>
+                <Trash2 />
+                Papelera
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

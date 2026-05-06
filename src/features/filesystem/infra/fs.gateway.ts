@@ -129,6 +129,15 @@ export const fsGateway = {
   unwatchDirectory: () => invoke<void>("unwatch_directory"),
   computeHashes: (path: string) =>
     invoke<{ md5: string; sha1: string; sha256: string; size: number }>("compute_file_hashes", { path }),
+  openUrl: (url: string) => invoke<void>("open_url", { url }),
+  listTrash: () =>
+    invoke<Array<{ name: string; isDir: boolean; size: number; modified: number }>>("list_trash"),
+  deleteFromTrash: (name: string) =>
+    invoke<void>("delete_from_trash", { name }),
+  restoreFromTrash: (name: string, destDir: string) =>
+    invoke<void>("restore_from_trash", { name, destDir }),
+  emptyTrash: () =>
+    invoke<void>("empty_trash"),
   compareDirectories: (dirA: string, dirB: string) =>
     invoke<Array<{
       name: string

@@ -1,14 +1,16 @@
 import { useRef, useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { Search, HardDrive, Diff, MoreHorizontal } from "lucide-react"
+import { Search, HardDrive, Diff, MoreHorizontal, Trash2 } from "lucide-react"
 import { useFileExplorer } from "../state/explorer-context"
 import { DiskUsagePanel } from "./disk-usage-panel"
 import { FolderComparatorPanel } from "./folder-comparator-panel"
+import { TrashPanel } from "./trash-panel"
 
 export function FilterBar() {
-  const { filterQuery, setFilterQuery, filterRef, entries } = useFileExplorer()
+  const { filterQuery, setFilterQuery, filterRef, entries, path, reload } = useFileExplorer()
   const [diskUsageOpen, setDiskUsageOpen] = useState(false)
   const [comparatorOpen, setComparatorOpen] = useState(false)
+  const [trashOpen, setTrashOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
@@ -81,6 +83,13 @@ export function FilterBar() {
               <Diff className="h-3.5 w-3.5 text-muted-foreground" />
               Comparar carpetas
             </button>
+            <button
+              className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm hover:bg-accent"
+              onClick={() => { setMenuPos(null); setTrashOpen(true) }}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+              Papelera
+            </button>
           </div>
         </>,
         document.body
@@ -88,6 +97,7 @@ export function FilterBar() {
 
       {diskUsageOpen && <DiskUsagePanel onClose={() => setDiskUsageOpen(false)} />}
       {comparatorOpen && <FolderComparatorPanel onClose={() => setComparatorOpen(false)} />}
+      {trashOpen && <TrashPanel onClose={() => setTrashOpen(false)} restorePath={path} onRestored={reload} />}
     </>
   )
 }

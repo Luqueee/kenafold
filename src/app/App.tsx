@@ -21,6 +21,7 @@ import {
   writeLastPath,
 } from "@/features/file-explorer/hooks/use-explorer-prefs"
 import { ArchiveProgressPanel } from "@/features/file-explorer/components/archive-progress-panel"
+import { TrashPanel } from "@/features/file-explorer/components/trash-panel"
 import { useClipboard } from "@/features/filesystem/api/use-clipboard"
 import { logger } from "@/shared/lib/logger"
 import { TagsProvider } from "@/features/tags/api/tags-context"
@@ -151,6 +152,7 @@ export default function App() {
 
   const sidebarFocusPath = activePath ?? homeDir ?? "/"
 
+  const [trashOpen, setTrashOpen] = useState(false)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
 
   const handleTagFilter = useCallback((tagId: string | null) => {
@@ -186,6 +188,7 @@ export default function App() {
               onRemoveFavorite={remove}
               tagFilter={tagFilter}
               onTagFilter={handleTagFilter}
+              onOpenTrash={() => setTrashOpen(true)}
             />
             <SidebarInset className="flex min-w-0 flex-1 flex-row overflow-hidden">
               {panes.map((p) => (
@@ -228,6 +231,13 @@ export default function App() {
         setTerminalId={settings.setTerminalId}
         refreshTerminals={settings.refreshTerminals}
       />
+
+      {trashOpen && (
+        <TrashPanel
+          onClose={() => setTrashOpen(false)}
+          restorePath={sidebarFocusPath}
+        />
+      )}
 
       <SearchPalette
         root={sidebarFocusPath}
