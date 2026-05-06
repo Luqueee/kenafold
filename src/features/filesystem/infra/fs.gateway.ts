@@ -129,4 +129,16 @@ export const fsGateway = {
   unwatchDirectory: () => invoke<void>("unwatch_directory"),
   computeHashes: (path: string) =>
     invoke<{ md5: string; sha1: string; sha256: string; size: number }>("compute_file_hashes", { path }),
+  compareDirectories: (dirA: string, dirB: string) =>
+    invoke<Array<{
+      name: string
+      status: "identical" | "different" | "only_a" | "only_b"
+      isDir: boolean
+      sizeA: number | null
+      sizeB: number | null
+      mtimeA: number | null
+      mtimeB: number | null
+      pathA: string | null
+      pathB: string | null
+    }>>("compare_directories", { dirA, dirB }),
 }

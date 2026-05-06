@@ -6,6 +6,7 @@ use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_opener::OpenerExt;
 
 mod archive;
+mod comparator;
 mod fs;
 mod grep;
 mod hash;
@@ -174,7 +175,8 @@ pub fn run() {
             watcher::watch_directory,
             watcher::unwatch_directory,
             watcher::current_watch_path,
-            hash::compute_file_hashes
+            hash::compute_file_hashes,
+            comparator::compare_directories
         ])
         .on_page_load(|webview, payload| {
             if webview.label() == "main" && matches!(payload.event(), PageLoadEvent::Finished) {
