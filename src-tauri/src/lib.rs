@@ -131,6 +131,7 @@ pub fn run() {
         .manage(watcher::WatcherState::default())
         .invoke_handler(tauri::generate_handler![
             fs::list_directory,
+            fs::disk_usage,
             fs::get_home_dir,
             fs::open_file,
             fs::reveal_in_file_manager,

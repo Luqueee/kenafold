@@ -108,6 +108,7 @@ export const fsGateway = {
       scriptPath,
       terminalId: terminalId ?? null,
     }),
+  diskUsage: (path: string) => invoke<{ name: string; path: string; is_dir: boolean; size: number }[]>("disk_usage", { path }),
   smbList: () => invoke<SmbShare[]>("smb_list"),
   smbSave: (share: SmbShare, password?: string | null) =>
     invoke<SmbShare>("smb_save", { share, password: password ?? null }),

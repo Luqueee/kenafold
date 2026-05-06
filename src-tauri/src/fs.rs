@@ -337,3 +337,58 @@ pub fn move_entry(src: String, dest: String) -> Result<(), String> {
     }
     std::fs::rename(src_path, dest_path).map_err(|e| e.to_string())
 }
+
+#[derive(Serialize, Clone)]
+pub struct DiskEntry {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+    pub size: u64,
+}
+
+fn dir_size(path: &Path, depth: u8) -> u64 {
+    if depth == 0 {
+        return 0;
+    }
+    let Ok(rd) = std::fs::read_dir(path) else { return 0 };
+    rd.filter_map(|e| e.ok())
+        .map(|e| {
+            let p = e.path();
+            match std::fs::symlink_metadata(&p) {
+                Ok(m) if m.is_dir() => dir_size(&p, depth - 1),
+                Ok(m) => m.len(),
+                Err(_) => 0,
+            }
+        })
+        .sum()
+}
+
+#[tauri::command]
+pub async fn disk_usage(path: String) -> Result<Vec<DiskEntry>, String> {
+    let dir_path = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = Path::new(&dir_path);
+        reject_traversal(dir)?;
+        let rd = std::fs::read_dir(dir).map_err(|e| e.to_string())?;
+        let mut entries: Vec<DiskEntry> = rd
+            .filter_map(|e| e.ok())
+            .filter_map(|e| {
+                let p = e.path();
+                let meta = std::fs::symlink_metadata(&p).ok()?;
+                let name = p.file_name()?.to_string_lossy().into_owned();
+                let is_dir = meta.is_dir();
+                let size = if is_dir { dir_size(&p, 10) } else { meta.len() };
+                Some(DiskEntry {
+                    name,
+                    path: p.to_string_lossy().into_owned(),
+                    is_dir,
+                    size,
+                })
+            })
+            .collect();
+        entries.sort_by(|a, b| b.size.cmp(&a.size));
+        Ok(entries)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

@@ -15,7 +15,7 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 
 ## 🟣 Features
 
-- [ ] **Tags/Labels de archivos** — color-coded, persistidos en SQLite local. Filtrable desde sidebar.
+- [x] **Tags/Labels de archivos** — color-coded, persistidos en SQLite local. Filtrable desde sidebar.
 - [ ] **Bulk rename con regex/patrón** — `{n}`, `{ext}`, `{date}` tokens. Preview antes de aplicar.
 - [ ] **Tree view en sidebar** — expand/collapse de carpetas favoritas sin abrir pane.
 - [ ] **Comparador de carpetas** — diff dos directorios (size, mtime, hash). Útil para sync manual.
@@ -44,7 +44,6 @@ Legend: 🔴 bug/debt · 🟣 feature · 🔄 refactor · ⚡ UX · 🧪 testing
 
 ## ⚡ UX / Pulido
 
-- [ ] **Breadcrumb editable** — click en breadcrumb → input path manual.
 - [ ] **Multi-tab por pane** — chrome-style tabs dentro de cada pane.
 - [ ] **Quick filter inline** — type-ahead en pane sin abrir search palette.
 - [ ] **Drag preview con count** — badge con cantidad al arrastrar N archivos.

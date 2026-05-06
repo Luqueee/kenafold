@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { DiskUsagePanel } from "./disk-usage-panel"
 import { useDroppable } from "@dnd-kit/core"
 import { useAction } from "@/features/hotkeys/bindings"
 import {
@@ -7,6 +8,7 @@ import {
   ArrowUp,
   Eye,
   EyeOff,
+  HardDrive,
   LayoutGrid,
   List,
   Pencil,
@@ -127,6 +129,7 @@ export function Toolbar() {
   } = useFileExplorer()
   const isDragging = draggingEntry !== null
 
+  const [diskUsageOpen, setDiskUsageOpen] = useState(false)
   const [editingPath, setEditingPath] = useState(false)
   const [pathDraft, setPathDraft] = useState("")
   const pathInputRef = useRef<HTMLInputElement | null>(null)
@@ -162,6 +165,7 @@ export function Toolbar() {
   useAction("view.terminal", openTerminal, { ignoreInputs: true })
 
   return (
+    <>
     <header
       data-tauri-drag-region
       className="flex h-12 w-full shrink-0 items-center gap-1 border-b border-border/60 bg-background/95 pl-2 pr-3 backdrop-blur"
@@ -227,6 +231,15 @@ export function Toolbar() {
         title="Copiar y editar ruta"
       >
         <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => setDiskUsageOpen(true)}
+        title="Espacio en disco"
+      >
+        <HardDrive className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"
@@ -364,5 +377,7 @@ export function Toolbar() {
         </kbd>
       </Button>
     </header>
+    {diskUsageOpen && <DiskUsagePanel onClose={() => setDiskUsageOpen(false)} />}
+    </>
   )
 }
