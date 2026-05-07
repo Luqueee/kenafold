@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
-import { Button } from "@/components/ui/button"
+import { Button } from "@kenafold/ui"
 
 type TrashEntry = FileEntry
 

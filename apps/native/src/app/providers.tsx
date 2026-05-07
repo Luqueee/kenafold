@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
 import { HotkeysProvider } from "@tanstack/react-hotkeys"
-import { TooltipProvider } from "@/components/ui/tooltip"
+
 import { HotkeyBindingsProvider } from "@/features/hotkeys/bindings"
+import { TooltipProvider } from "@kenafold/ui"
 
 interface Props {
   children: ReactNode

@@ -2,9 +2,9 @@ import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { Globe } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+
 import { SUPPORTED_LANGUAGES, type Language } from "@/shared/i18n/i18n"
+import { Button, cn } from "@kenafold/ui"
 
 interface Props {
   onSelect: (lang: Language) => void

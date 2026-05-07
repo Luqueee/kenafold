@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next"
 import { Keyboard, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { useHotkeyBindings } from "../bindings"
 import { HOTKEY_ACTIONS, type HotkeyActionId } from "../registry"
 import { HotkeyRecorderButton } from "./hotkey-recorder-button"
+import { Button } from "@kenafold/ui"
 
 const GROUP_I18N_KEY: Record<string, string> = {
   Navegación: "navigation",

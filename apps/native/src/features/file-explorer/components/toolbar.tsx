@@ -19,18 +19,10 @@ import {
 } from "lucide-react"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import { logger } from "@/shared/lib/logger"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+
 import type { PathSegment } from "@/features/filesystem/domain/path"
 import { useFileExplorer } from "../state/explorer-context"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, Button, Separator, SidebarTrigger } from "@kenafold/ui"
 
 function DroppableUpButton({
   parent,

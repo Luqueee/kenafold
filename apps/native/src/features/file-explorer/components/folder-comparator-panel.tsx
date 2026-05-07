@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next"
 import { X, Folder, File, Loader2, Hash, Check, AlertCircle, ArrowRight } from "lucide-react"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import { useFileExplorer } from "../state/explorer-context"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+
 import i18n from "@/shared/i18n/i18n"
+import { Button, Input } from "@kenafold/ui"
 
 type DiffStatus = "identical" | "different" | "only_a" | "only_b"
 

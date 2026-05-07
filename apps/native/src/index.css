@@ -1,118 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist"; /* reemplaza la línea de inter */
+@import "@kenafold/ui/globals.css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: "Geist Variable", sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-:root {
-  --radius: 0.75rem;
-
-  /* Base — slate cálido con tinte verde sutil */
-  --background: oklch(0.17 0.01 180);
-  --foreground: oklch(0.96 0.005 180);
-
-  --card: oklch(0.21 0.012 180);
-  --card-foreground: oklch(0.96 0.005 180);
-
-  --popover: oklch(0.22 0.012 180);
-  --popover-foreground: oklch(0.96 0.005 180);
-
-  /* Primary — teal/mint marca Kenafold */
-  --primary: oklch(0.78 0.13 175);
-  --primary-foreground: oklch(0.18 0.02 180);
-
-  --secondary: oklch(0.27 0.012 180);
-  --secondary-foreground: oklch(0.96 0.005 180);
-
-  --muted: oklch(0.24 0.01 180);
-  --muted-foreground: oklch(0.7 0.015 180);
-
-  /* Accent — verde subtle para hover/selected */
-  --accent: oklch(0.32 0.04 175);
-  --accent-foreground: oklch(0.97 0.01 175);
-
-  /* Destructive — rojo coral moderno */
-  --destructive: oklch(0.68 0.2 22);
-
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(1 0 0 / 12%);
-
-  /* Charts — degradado teal → ámbar */
-  --chart-1: oklch(0.78 0.13 175);
-  --chart-2: oklch(0.72 0.14 195);
-  --chart-3: oklch(0.7 0.15 145);
-  --chart-4: oklch(0.78 0.16 80);
-  --chart-5: oklch(0.72 0.18 50);
-
-  /* Sidebar — un nivel más oscuro que background */
-  --sidebar: oklch(0.19 0.012 180);
-  --sidebar-foreground: oklch(0.94 0.008 180);
-  --sidebar-primary: oklch(0.78 0.13 175);
-  --sidebar-primary-foreground: oklch(0.18 0.02 180);
-  --sidebar-accent: oklch(0.28 0.025 175);
-  --sidebar-accent-foreground: oklch(0.97 0.01 175);
-  --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: transparent;
-}
-
-@layer base {
-  * {
-    @apply border-border outline-none;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
-
-/* Disable page-level overscroll and rubber-band scrolling so the UI feels more desktop-native. */
+/* Desktop-specific: disable rubber-band scrolling */
 html,
 body {
   height: 100%;
@@ -122,7 +10,6 @@ body {
   overflow: hidden;
 }
 
-/* Scope the desktop scroll shell to the generated root container only. */
 [data-ui-scroll-container] {
   height: 100vh;
   height: 100dvh;
@@ -131,18 +18,15 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Vite mounts into #root, so it needs to inherit the full-height desktop shell. */
 #root {
   height: 100%;
 }
 
 @layer base {
-  /* Desktop UIs often feel cleaner with accidental text selection disabled by default. */
   body {
     @apply select-none;
   }
 
-  /* Keep editing and code surfaces selectable so inputs and diagnostics still work normally. */
   input,
   textarea,
   [contenteditable="true"],
@@ -153,7 +37,6 @@ body {
 }
 
 @layer utilities {
-  /* Opt back into selection for any generated UI surface that should behave like regular text. */
   .ui-selectable {
     @apply select-text;
   }

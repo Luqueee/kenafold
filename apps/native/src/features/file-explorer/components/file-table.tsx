@@ -2,8 +2,7 @@ import { useState, useEffect } from "react"
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, FileText, Folder, FolderOpen, Loader2, Search } from "lucide-react"
 import type { SortBy } from "@/features/filesystem/infra/fs.gateway"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+
 import { formatSize, formatDate } from "@/shared/lib/format"
 import { useFileExplorer } from "../state/explorer-context"
 import { useTags } from "@/features/tags/api/tags-context"
@@ -12,6 +11,7 @@ import { FileIcon } from "./file-icon"
 import { FileRow } from "./file-row"
 import { FileGrid } from "./file-grid"
 import { InlineEditInput } from "./inline-edit-input"
+import { Button, Checkbox } from "@kenafold/ui"
 
 const ROW_HEIGHT = 36
 

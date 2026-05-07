@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet"
+
 import type { SmbShare } from "../domain/share"
+import { Button, Input, Label, Checkbox, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kenafold/ui"
 
 interface Props {
   open: boolean

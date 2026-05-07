@@ -1,34 +1,64 @@
-# Kenafold — File Explorer
+# Kenafold — Monorepo
 
-Tauri 2 desktop file manager for macOS. Product name: **Kenafold** (`com.luqueee.Kenafold`).
+Tauri 2 desktop file manager for macOS + TanStack Start landing page. Product name: **Kenafold** (`com.luqueee.Kenafold`).
+
+## Monorepo Structure
+
+```
+apps/
+  native/   # Tauri 2 desktop app (React + Vite + Rust)
+  web/      # Landing page (TanStack Start + Vite)
+packages/
+  ui/       # Shared shadcn components + Tailwind 4 theme (@kenafold/ui)
+```
 
 ## Stack
 
 | Layer           | Tech                                                       |
 | --------------- | ---------------------------------------------------------- |
 | Frontend        | React 19, TypeScript, Vite 7, TailwindCSS 4                |
-| UI components   | shadcn/ui (radix-ui), lucide-react, iconify (vscode-icons) |
+| Shared UI       | `@kenafold/ui` — shadcn/ui (radix-ui), lucide-react        |
 | Tables/virtual  | @tanstack/react-table + @tanstack/react-virtual            |
 | Hotkeys         | @tanstack/react-hotkeys                                    |
 | Drag & drop     | @dnd-kit                                                   |
 | Backend         | Rust (Tauri 2 commands)                                    |
-| Package manager | **bun**                                                    |
+| Package manager | **bun** workspaces                                         |
+| Monorepo        | Turbo 2                                                    |
 | Tests           | Vitest + @testing-library/react                            |
 
 ## Commands
 
 ```bash
-bun run tauri dev      # full Tauri app (Rust + frontend)
-bun run dev            # frontend only (port 1420)
-bun run typecheck      # tsc --noEmit
-bun run lint           # eslint
-bun run test           # vitest run
-bun run test:watch     # vitest watch
+# From root
+bun dev              # dev all apps in parallel (turbo)
+bun typecheck        # typecheck all packages
+
+# From apps/native/
+bun run tauri dev    # full Tauri app (Rust + frontend)
+bun run dev          # frontend only (port 1420)
+bun run typecheck    # tsc --noEmit
+bun run lint         # eslint
+bun run test         # vitest run
+bun run test:watch   # vitest watch
+
+# From apps/web/
+bun run dev          # TanStack Start dev server
 ```
 
 Never run `bun run build` — see global rules.
 
-## Architecture
+## Shared UI Package (`packages/ui`)
+
+- `packages/ui/src/components/` — all shadcn primitives
+- `packages/ui/src/lib/utils.ts` — `cn()` utility
+- `packages/ui/globals.css` — Tailwind 4 imports + Kenafold theme tokens
+
+Import in apps: `import { Button, cn } from "@kenafold/ui"`
+Import CSS in apps: `@import "@kenafold/ui/globals.css"`
+
+**Adding new shadcn components:** add to `packages/ui/src/components/`, export from `packages/ui/src/index.ts`.
+
+## apps/native Architecture
 
 Feature-based (Screaming Architecture). Each feature owns its layers:
 
@@ -54,11 +84,10 @@ src/features/[feature]/
 | `sidebar`       | App sidebar with favorites + SMB shares                              |
 | `smb`           | SMB/network share mounting                                           |
 
-### Shared
+### Shared (within apps/native)
 
 - `src/shared/lib/` — cross-feature pure utilities
 - `src/shared/tauri/` — shared Tauri helpers
-- `src/components/ui/` — shadcn primitives (do not modify directly)
 
 ### State
 
@@ -72,9 +101,9 @@ All called via `fsGateway` in `src/features/filesystem/infra/fs.gateway.ts`.
 
 ## Conventions
 
-- Path alias `@/` → `src/`
+- Path alias `@/` → `src/` (within each app)
+- UI primitives come from `@kenafold/ui` — never recreate them in app code
 - Hooks that call Tauri live in `api/` or `infra/`, not inside components
 - Domain files have zero React imports — pure TS only
 - Tests live next to the file they test (`*.test.ts`)
-- UI primitives come from shadcn — don't reinvent them
-- TailwindCSS 4 (no `tailwind.config` — configured via CSS)
+- TailwindCSS 4 (no `tailwind.config` — configured via CSS in `packages/ui/globals.css`)

@@ -7,12 +7,12 @@ import {
 } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { useAction } from "@/features/hotkeys/bindings"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+
 import { AppSidebar } from "@/features/sidebar/components/app-sidebar"
 import { Pane, type PaneNavApi } from "@/features/file-explorer/components/pane"
 import { SearchPalette } from "@/features/search/components/search-palette"
 import { SettingsPanel } from "@/features/settings/components/settings-panel"
-import { Toaster } from "@/components/ui/sonner"
+
 import { useSettings } from "@/features/settings/api/use-settings"
 import { useHomeDir } from "@/features/filesystem/api/use-directory"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
@@ -34,6 +34,7 @@ import { CliInstallBanner } from "@/features/file-explorer/components/cli-instal
 import { useOnboarding } from "@/features/onboarding/hooks/use-onboarding"
 import { LanguagePicker } from "@/features/settings/components/language-picker"
 import { useTranslation } from "react-i18next"
+import { SidebarInset, SidebarProvider, Toaster } from "@kenafold/ui"
 
 const sidebarStyle = {
   "--sidebar-width": "calc(var(--spacing) * 56)",

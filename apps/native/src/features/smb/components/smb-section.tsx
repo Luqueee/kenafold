@@ -1,17 +1,16 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Network, Plus, Unplug, Plug, Pencil, Trash2, Loader2 } from "lucide-react"
-import {
-  SidebarGroup, SidebarGroupAction, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import { AddSmbDialog } from "./add-smb-dialog"
 import { useSmb } from "../api/use-smb"
 import { smbMountPath, type SmbShare } from "../domain/share"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+  SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu,
+  SidebarMenuAction, SidebarMenuButton, SidebarMenuItem,
+} from "@kenafold/ui"
 
 interface Props {
   currentPath: string

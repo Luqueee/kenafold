@@ -2,19 +2,12 @@ import { RefreshCw, Terminal, Check, Globe } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
-import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { HotkeysList } from "@/features/hotkeys/components/hotkeys-list"
-import { cn } from "@/lib/utils"
+
 import { SUPPORTED_LANGUAGES, type Language } from "@/shared/i18n/i18n"
 import type { TerminalInfo } from "../api/use-settings"
+import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, Tabs, TabsContent, TabsList, TabsTrigger, cn } from "@kenafold/ui"
 
 interface Props {
   open: boolean

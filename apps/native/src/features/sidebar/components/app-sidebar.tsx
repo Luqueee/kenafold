@@ -15,23 +15,14 @@ import {
   Folder,
   Loader2,
 } from "lucide-react"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuAction,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
+
 import { SmbSection } from "@/features/smb/components/smb-section"
 import { useTags } from "@/features/tags/api/tags-context"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
 import type { SavedSearch } from "@/features/search/infra/saved-searches.storage"
 import { Search } from "lucide-react"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
-import { cn } from "@/lib/utils"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuAction, SidebarMenuItem, cn } from "@kenafold/ui"
 
 interface TreeNodeProps {
   path: string

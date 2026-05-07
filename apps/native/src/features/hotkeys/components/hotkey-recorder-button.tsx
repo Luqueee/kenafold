@@ -1,9 +1,9 @@
 import { useState } from "react"
-import type { Hotkey } from "@tanstack/hotkeys"
-import { formatForDisplay } from "@tanstack/hotkeys"
+import type { Hotkey } from "@tanstack/react-hotkeys"
+import { formatForDisplay } from "@tanstack/react-hotkeys"
 import { useHotkeyRecorder } from "@tanstack/react-hotkeys"
 import { RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@kenafold/ui"
 
 interface Props {
   hotkey: Hotkey
