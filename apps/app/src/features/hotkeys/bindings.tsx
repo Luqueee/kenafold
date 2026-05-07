@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { Hotkey } from "@tanstack/hotkeys"
+import type { Hotkey } from "@tanstack/react-hotkeys"
 import { useHotkey } from "@tanstack/react-hotkeys"
 import type { UseHotkeyOptions } from "@tanstack/react-hotkeys"
 import {

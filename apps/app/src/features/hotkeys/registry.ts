@@ -1,4 +1,4 @@
-import type { Hotkey } from "@tanstack/hotkeys"
+import type { Hotkey } from "@tanstack/react-hotkeys"
 
 export interface HotkeyAction {
   id: string

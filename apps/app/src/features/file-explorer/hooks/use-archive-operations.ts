@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { listen } from "@tauri-apps/api/event"
 import { toast } from "sonner"
 import { fsGateway } from "@/features/filesystem/infra/fs.gateway"
@@ -37,9 +37,6 @@ export function useArchiveOperations() {
   )
   // Keep a ref so the event handler always sees the latest map without
   // needing to be re-registered.
-  const operationsRef = useRef<Map<string, ArchiveOperation>>(operations)
-  operationsRef.current = operations
-
   useEffect(() => {
     const unlistenPromise = listen<ArchiveProgressEvent>(
       "archive://progress",

@@ -2,6 +2,7 @@
   "name": "kenafold",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "bun@1.3.5",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -9,12 +10,13 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:ui": "turbo build --filter @kenafold/ui",
+    "build:web": "turbo build --filter @kenafold/web",
+    "build:app": "turbo build --filter @kenafold/app",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "test": "turbo test",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "shadcn": "bun --filter @repo/ui shadcn",
-    "tauri": "bun --filter @kenafold/native tauri"
+    "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "prettier": "^3.8.1",

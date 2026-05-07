@@ -6,8 +6,8 @@ import type { HotkeyActionId } from "@/features/hotkeys/registry"
 import type { FileEntry } from "@/features/filesystem/domain/file-entry"
 import { isShellScript } from "@/features/filesystem/domain/file-entry"
 import { parentPath } from "@/features/filesystem/domain/path"
-import type { ViewMode } from "../hooks/use-view-mode"
-import type { InlineMode } from "../hooks/use-inline-editing"
+import type { ViewMode } from "./use-view-mode"
+import type { InlineMode } from "./use-inline-editing"
 import type { Clipboard } from "@/features/filesystem/domain/clipboard"
 
 interface UseExplorerHotkeysOptions {
