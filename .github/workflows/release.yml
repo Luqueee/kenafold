@@ -10,13 +10,20 @@ jobs:
   publish-tauri:
     permissions:
       contents: write
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
 
+    runs-on: ${{ matrix.platform }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
@@ -24,7 +31,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/native/src-tauri
+          workspaces: apps/app/src-tauri
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -35,29 +42,15 @@ jobs:
         run: bun install
 
       - name: Build and publish
-        id: tauri
-        uses: tauri-apps/tauri-action@action-v0.6.2
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: apps/native
+          projectPath: apps/app
           tagName: v__VERSION__
           releaseName: Kenafold v__VERSION__
           releaseBody: See the assets to download this version and install it on your machine.
           releaseDraft: true
           prerelease: false
           generateReleaseNotes: true
-          retryAttempts: 2
-          args: --target universal-apple-darwin
-          includeUpdaterJson: false
-
-      - name: Release summary
-        if: steps.tauri.outputs.releaseHtmlUrl != ''
-        run: |
-          {
-            echo "## Kenafold Release"
-            echo ""
-            echo "- Version: \`${{ steps.tauri.outputs.appVersion }}\`"
-            echo "- Release: ${{ steps.tauri.outputs.releaseHtmlUrl }}"
-            echo "- Artifacts: \`${{ steps.tauri.outputs.artifactPaths }}\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          args: ${{ matrix.args }}
