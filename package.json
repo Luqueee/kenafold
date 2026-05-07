@@ -18,6 +18,10 @@
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
+  "overrides": {
+    "@tanstack/router-generator": "1.120.20",
+    "@tanstack/router-plugin": "1.120.20"
+  },
   "devDependencies": {
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
